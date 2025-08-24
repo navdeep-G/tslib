@@ -1,8 +1,8 @@
-# 📦 Time Series Library in Java (`tslib`)
+# Time Series Library in Java
 
 ## Overview
 
-This repository provides a modular Java library for time series analysis and forecasting. It includes implementations of key smoothing algorithms, moving averages, data transformation tools, and stationarity testing — all essential for modeling and analyzing sequential data in domains like finance, economics, and engineering.
+`tslib` is a modular Java library for time series analysis and forecasting. It includes implementations of key smoothing algorithms, moving averages, data transformation tools, and stationarity testing — all essential for modeling and analyzing sequential data in domains like finance, economics, and engineering.
 
 ---
 
