@@ -1,42 +1,54 @@
-
 plugins {
-    id 'java-library'  // Apply the java-library plugin for API and implementation separation.
-    id 'java'
+    id 'java-library'
     id 'idea'
     id 'eclipse'
 }
 
+group = 'io.github.navdeep-g'
+version = '0.1.0-SNAPSHOT'
+
+description = 'tslib - Time series analysis and forecasting utilities for Java'
+
 repositories {
-    // Use JCenter for resolving dependencies.
-    jcenter()
+    mavenCentral()
 }
 
 dependencies {
-    // Use JUnit test framework.
-    testImplementation 'junit:junit:4.13'
-
-    // This dependency is exported to consumers, that is to say found on their compile classpath.
     api 'org.apache.commons:commons-math3:3.6.1'
-
-    // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation 'com.google.guava:guava:29.0-jre'
+
+    testImplementation 'junit:junit:4.13.2'
 }
 
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
+    withSourcesJar()
+    withJavadocJar()
 }
 
-test {
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Test).configureEach {
+    useJUnit()
     testLogging {
-        events "passed", "skipped", "failed"
-        exceptionFormat "full"
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat 'full'
         showCauses true
         showExceptions true
         showStackTraces true
     }
 }
 
-
-
+jar {
+    manifest {
+        attributes(
+            'Implementation-Title': 'tslib',
+            'Implementation-Version': project.version,
+            'Automatic-Module-Name': 'tslib'
+        )
+    }
+}
