@@ -1,66 +1,55 @@
-# Time Series Library in Java
+# tslib
 
-## Overview
+A small Java library for time-series analysis and forecasting.
 
-`tslib` is a modular Java library for time series analysis and forecasting. It includes implementations of key smoothing algorithms, moving averages, data transformation tools, and stationarity testing — all essential for modeling and analyzing sequential data in domains like finance, economics, and engineering.
+## What is included
 
----
+- exponential smoothing: single, double, and triple
+- moving averages: simple, cumulative, exponential, and weighted
+- transformations: log, roots, and Box-Cox
+- statistics: mean, variance, autocovariance, ACF, and PACF
+- stationarity testing with Augmented Dickey-Fuller
 
-## 🚀 Features
+## Build
 
-- 📈 Core time series models: **Exponential Smoothing**, **Moving Averages**
-- 🔁 Support for trend and seasonality: Single, Double, and Triple Exponential Smoothing
-- 🧪 Stationarity testing with Augmented Dickey-Fuller (ADF)
-- 🔄 Built-in utilities for transformation (log, sqrt, Box-Cox)
-- 📊 Statistical summary utilities: autocovariance, ACF, PACF, mean, std, and more
-- 🧹 Clean architecture with extensible interfaces
+The project targets Java 17 and uses Gradle.
 
----
+```bash
+gradle test
+```
 
-## 🧠 Core Components
+This snapshot does not include the generated `gradle-wrapper.jar`, so `gradle` is the most reliable entry point unless you regenerate the wrapper locally.
 
-### 📊 Statistical Utilities
+## Package map
 
-- `tslib.stats.Stats`: Utility methods for calculating mean, variance, autocovariance, ACF, PACF, and more.
+Primary implementation packages:
 
----
+- `tslib.collect`
+- `tslib.model.expsmoothing`
+- `tslib.movingaverage`
+- `tslib.tests`
+- `tslib.transform`
+- `tslib.util`
 
-### 🔄 Data Transformation
+Compatibility aliases added in this patch:
 
-- `tslib.transform.Transform`: Preprocessing methods for log, square root, cube root, and Box-Cox transformations.
+- `tslib.model.*` forwards to `tslib.model.expsmoothing.*`
+- `tslib.stats.Stats` forwards to `tslib.util.Stats`
 
----
+These aliases make the public API line up with the README examples without breaking existing imports.
 
-### 📈 Moving Average Models
-
-- `tslib.movingaverage.SimpleMovingAverage`: Fixed-window **SMA** for smoothing time series.
-- `tslib.movingaverage.CumulativeMovingAverage`: Real-time **CMA** update of the running mean.
-- `tslib.movingaverage.ExponentialMovingAverage`: **EMA** implementation with decay factor.
-
-Each model implements the shared `MovingAverage` interface for consistency.
-
----
-
-### 🔁 Exponential Smoothing Models
-
-- `tslib.model.SingleExpSmoothing`: Single Exponential Smoothing (level only).
-- `tslib.model.DoubleExpSmoothing`: Double Exponential Smoothing (Holt's method – level + trend).
-- `tslib.model.TripleExpSmoothing`: Triple Exponential Smoothing (Holt-Winters – level, trend, seasonality).
-
-All models implement the `ExponentialSmoothing` interface.
-
----
-
-### 🧪 Stationarity Testing
-
-- `tslib.tests.AugmentedDickeyFuller`: Java implementation of the ADF test, used to check for unit roots in time series data.
-
----
-
-## 📂 Example Usage
+## Quick start
 
 ```java
-List<Double> data = Util.ReadFile("data/hotel.txt");
+import java.util.List;
+import tslib.model.ExponentialSmoothing;
+import tslib.model.TripleExpSmoothing;
+import tslib.movingaverage.MovingAverage;
+import tslib.movingaverage.SimpleMovingAverage;
+import tslib.transform.Transform;
+import tslib.util.Util;
+
+List<Double> data = Util.readFile("data/hotel.txt");
 
 ExponentialSmoothing model = new TripleExpSmoothing(0.5, 0.3, 0.2, 12, false);
 List<Double> forecast = model.forecast(data, 5);
@@ -68,5 +57,21 @@ List<Double> forecast = model.forecast(data, 5);
 MovingAverage sma = new SimpleMovingAverage(3);
 List<Double> smoothed = sma.compute(data);
 
-double lambda = BoxCox.lambdaSearch(data);
-List<Double> transformed = BoxCox.transform(data, lambda);
+double lambda = Transform.boxCoxLambdaSearch(data);
+List<Double> transformed = Transform.boxCox(data, lambda);
+```
+
+## Examples
+
+See the `examples/` directory for runnable snippets.
+
+## Release notes
+
+This patch makes the following repo-level improvements:
+
+- fixes the Gradle project name from `expsmoothing` to `tslib`
+- removes deprecated `jcenter()` in favor of `mavenCentral()`
+- adds API compatibility aliases for the package names shown in the docs
+- refreshes CI to use current Gradle and Java setup
+- adds focused regression tests and example programs
+- adds a changelog stub for future releases
