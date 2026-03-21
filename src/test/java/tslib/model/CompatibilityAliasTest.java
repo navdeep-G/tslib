@@ -17,4 +17,15 @@ public class CompatibilityAliasTest {
         assertEquals(12.5, out.get(3), 1e-9);
         assertEquals(12.5, out.get(4), 1e-9);
     }
+
+    @Test
+    public void arimaAliasForecastsThroughCompatibilityPackage() {
+        ARIMA model = new ARIMA(0, 1, 0);
+        List<Double> out = model.forecast(List.of(1.0, 2.0, 3.0, 4.0), 2);
+
+        assertEquals(6, out.size());
+        assertEquals(5.0, out.get(4), 1e-6);
+        assertEquals(6.0, out.get(5), 1e-6);
+    }
+
 }
