@@ -2,12 +2,27 @@
 
 ## Unreleased
 
-- renamed the Gradle root project to `tslib`
-- replaced `jcenter()` with `mavenCentral()`
-- added `tslib.model.*` compatibility wrappers
-- added `tslib.model.ARIMA` compatibility wrapper
-- added `tslib.stats.Stats` compatibility wrapper
-- added `tslib.transform.Differencing` with first-order, higher-order, seasonal, and inverse differencing helpers
-- added `tslib.model.arima.ARIMA` with iterative conditional least squares fitting and forecasting
-- refreshed README and example programs
-- added regression tests for stats, transforms, moving averages, differencing, ARIMA, and compatibility aliases
+### Repo maintenance
+- align Gradle metadata with `tslib`
+- replace `jcenter()` with `mavenCentral()`
+- refresh README, examples, and CI
+- add API compatibility aliases used in the docs
+
+### Phase 1
+- add differencing and inverse differencing utilities
+- add manual ARIMA forecasting support
+- add ARIMA examples and regression tests
+
+### Phase 2
+- add seasonal SARIMA forecasting support
+- add AIC, BIC, and AICc helpers
+- add ARIMA/SARIMA order-search utilities
+
+### Phase 3
+- add STL-style decomposition
+- add KPSS stationarity testing
+
+### Phase 4
+- add one-dimensional Kalman filtering
+- add local-level state-space forecasting model
+- add examples and tests for state-space workflows

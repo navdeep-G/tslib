@@ -28,4 +28,27 @@ public class CompatibilityAliasTest {
         assertEquals(6.0, out.get(5), 1e-6);
     }
 
+
+    @Test
+    public void sarimaAliasForecastsThroughCompatibilityPackage() {
+        SARIMA model = new SARIMA(0, 0, 0, 0, 1, 0, 4);
+        List<Double> out = model.forecast(List.of(
+                10.0, 20.0, 30.0, 40.0,
+                11.0, 21.0, 31.0, 41.0,
+                12.0, 22.0, 32.0, 42.0), 2);
+
+        assertEquals(14, out.size());
+        assertEquals(13.0, out.get(12), 1e-3);
+        assertEquals(23.0, out.get(13), 1e-3);
+    }
+
+    @Test
+    public void localLevelAliasExposesStatespaceModel() {
+        LocalLevelModel model = new LocalLevelModel().fit(List.of(10.0, 10.1, 9.9, 10.0));
+
+        List<Double> forecast = model.forecast(2);
+        assertEquals(2, forecast.size());
+        assertEquals(model.getFilteredStates().get(model.getFilteredStates().size() - 1), forecast.get(0), 1e-9);
+    }
+
 }

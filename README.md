@@ -6,10 +6,13 @@ A small Java library for time-series analysis and forecasting.
 
 - exponential smoothing: single, double, and triple
 - moving averages: simple, cumulative, exponential, and weighted
-- transformations: log, roots, Box-Cox, and differencing
+- transformations: log, roots, Box-Cox, differencing, and seasonal differencing
 - statistics: mean, variance, autocovariance, ACF, and PACF
-- stationarity testing with Augmented Dickey-Fuller
-- ARIMA forecasting with manual `(p, d, q)` order selection
+- stationarity testing with Augmented Dickey-Fuller and KPSS
+- model-based forecasting with ARIMA and SARIMA
+- decomposition with STL-style trend/seasonal/remainder extraction
+- compact state-space forecasting with a local-level Kalman model
+- order-selection helpers with AIC, BIC, and AICc
 
 ## Build
 
@@ -26,64 +29,86 @@ This snapshot does not include the generated `gradle-wrapper.jar`, so `gradle` i
 Primary implementation packages:
 
 - `tslib.collect`
+- `tslib.decomposition`
 - `tslib.model.arima`
 - `tslib.model.expsmoothing`
+- `tslib.model.statespace`
 - `tslib.movingaverage`
 - `tslib.tests`
 - `tslib.transform`
 - `tslib.util`
 
-Compatibility aliases added in this patch:
+Compatibility aliases added in this patch series:
 
 - `tslib.model.*` forwards to `tslib.model.expsmoothing.*`
 - `tslib.model.ARIMA` forwards to `tslib.model.arima.ARIMA`
+- `tslib.model.SARIMA` forwards to `tslib.model.arima.SARIMA`
+- `tslib.model.LocalLevelModel` forwards to `tslib.model.statespace.LocalLevelModel`
 - `tslib.stats.Stats` forwards to `tslib.util.Stats`
-
-These aliases make the public API line up with the README examples without breaking existing imports.
 
 ## Quick start
 
 ```java
 import java.util.List;
+import tslib.decomposition.STLDecomposition;
 import tslib.model.ARIMA;
-import tslib.model.ExponentialSmoothing;
-import tslib.model.TripleExpSmoothing;
-import tslib.movingaverage.MovingAverage;
-import tslib.movingaverage.SimpleMovingAverage;
+import tslib.model.LocalLevelModel;
+import tslib.model.SARIMA;
+import tslib.tests.KPSSTest;
 import tslib.transform.Differencing;
-import tslib.transform.Transform;
-import tslib.util.Util;
 
-List<Double> data = Util.readFile("data/hotel.txt");
+List<Double> data = List.of(
+        10.0, 20.0, 30.0, 40.0,
+        11.0, 21.0, 31.0, 41.0,
+        12.0, 22.0, 32.0, 42.0);
 
-ExponentialSmoothing smoothing = new TripleExpSmoothing(0.5, 0.3, 0.2, 12, false);
-List<Double> smoothedForecast = smoothing.forecast(data, 5);
-
-MovingAverage sma = new SimpleMovingAverage(3);
-List<Double> smoothed = sma.compute(data);
-
-List<Double> firstDifference = Differencing.difference(data);
 ARIMA arima = new ARIMA(1, 1, 0).fit(data);
 List<Double> arimaForecast = arima.forecast(5);
 
-double lambda = Transform.boxCoxLambdaSearch(data);
-List<Double> transformed = Transform.boxCox(data, lambda);
+SARIMA sarima = new SARIMA(0, 0, 0, 0, 1, 0, 4).fit(data);
+List<Double> sarimaForecast = sarima.forecast(4);
+
+List<Double> firstDifference = Differencing.difference(data);
+STLDecomposition.Result stl = new STLDecomposition(4).decompose(data);
+KPSSTest kpss = new KPSSTest(stl.getRemainder());
+
+LocalLevelModel localLevel = new LocalLevelModel().fit(data);
+List<Double> stateSpaceForecast = localLevel.forecast(3);
 ```
 
-## Phase 1 additions
+## Phase additions
 
-This patch adds the first model-based forecasting phase beyond smoothing:
+### Phase 1
 
 - `tslib.transform.Differencing`
-  - first-order differencing
-  - higher-order differencing
-  - seasonal differencing
-  - inverse differencing for restoring forecasts to the original scale
 - `tslib.model.arima.ARIMA`
-  - manual `ARIMA(p, d, q)` order selection
-  - iterative conditional least squares fitting
-  - in-sample fitted values and future forecasts
-  - coefficient and residual accessors for diagnostics
+- `tslib.model.ARIMA`
+
+### Phase 2
+
+- `tslib.model.arima.SARIMA`
+  - seasonal ARIMA forecasting with seasonal differencing
+  - seasonal and non-seasonal AR/MA terms
+- `tslib.model.arima.InformationCriteria`
+  - AIC, BIC, and AICc helpers
+- `tslib.model.arima.ArimaOrderSearch`
+  - simple grid-search helpers for ARIMA and SARIMA
+
+### Phase 3
+
+- `tslib.decomposition.STLDecomposition`
+  - trend, seasonal, and remainder components
+- `tslib.tests.KPSSTest`
+  - level and trend stationarity options
+
+### Phase 4
+
+- `tslib.model.statespace.KalmanFilter`
+  - one-dimensional local-level Kalman filter
+- `tslib.model.statespace.LocalLevelModel`
+  - basic variance search, filtering, and forecasting helpers
+- `tslib.model.LocalLevelModel`
+  - compatibility alias
 
 ## Examples
 
@@ -92,15 +117,10 @@ See the `examples/` directory for runnable snippets:
 - `ForecastExample.java`
 - `TransformExample.java`
 - `ArimaExample.java`
+- `SarimaExample.java`
+- `StlAndKpssExample.java`
+- `LocalLevelExample.java`
 
-## Release notes
+## Notes
 
-This snapshot includes the following repo-level improvements:
-
-- fixes the Gradle project name from `expsmoothing` to `tslib`
-- removes deprecated `jcenter()` in favor of `mavenCentral()`
-- adds API compatibility aliases for the package names shown in the docs
-- adds Phase 1 forecasting features: differencing and ARIMA
-- refreshes CI to use current Gradle and Java setup
-- adds focused regression tests and example programs
-- adds a changelog stub for future releases
+The ARIMA/SARIMA and state-space additions are intentionally compact and dependency-light. They are designed for readable forecasting workflows inside this library rather than exhaustive econometric coverage.
