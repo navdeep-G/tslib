@@ -3,6 +3,9 @@ package tslib.model.arima;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import tslib.evaluation.ForecastIntervals;
+import tslib.evaluation.IntervalForecast;
+import tslib.evaluation.PredictionInterval;
 import tslib.transform.Differencing;
 
 /**
@@ -234,6 +237,18 @@ public class SARIMA {
 
     public int getSeasonalPeriod() {
         return seasonalPeriod;
+    }
+
+    public List<PredictionInterval> forecastIntervals(int steps, double confidenceLevel) {
+        requireFitted();
+        List<Double> forecast = forecast(steps);
+        boolean increasing = d > 0 || seasonalD > 0 || q > 0 || seasonalQ > 0;
+        return ForecastIntervals.normalIntervals(forecast, innovationVariance, confidenceLevel, increasing);
+    }
+
+    public IntervalForecast forecastWithIntervals(int steps, double confidenceLevel) {
+        List<Double> forecast = forecast(steps);
+        return ForecastIntervals.wrap(forecast, forecastIntervals(steps, confidenceLevel));
     }
 
     private List<Double> buildFittedSeries(int maxLag) {

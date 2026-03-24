@@ -42,6 +42,18 @@ public class CompatibilityAliasTest {
         assertEquals(23.0, out.get(13), 1e-3);
     }
 
+
+    @Test
+    public void arimaxAliasForecastsThroughCompatibilityPackage() {
+        ARIMAX model = new ARIMAX(0, 0, 0).fit(
+                List.of(7.0, 9.0, 11.0, 13.0),
+                new double[][] {{1.0}, {2.0}, {3.0}, {4.0}});
+
+        List<Double> forecast = model.forecast(new double[][] {{5.0}, {6.0}});
+        assertEquals(2, forecast.size());
+        assertEquals(15.0, forecast.get(0), 1.0);
+    }
+
     @Test
     public void localLevelAliasExposesStatespaceModel() {
         LocalLevelModel model = new LocalLevelModel().fit(List.of(10.0, 10.1, 9.9, 10.0));
