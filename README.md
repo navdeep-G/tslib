@@ -16,16 +16,17 @@ A small Java library for time-series analysis, forecasting, evaluation, and data
 - prediction intervals for ARIMA, SARIMA, and local-level forecasts
 - auto-selection helpers for ARIMA/SARIMA and exponential smoothing
 - data-quality utilities for missing values, outliers, and winsorization
+- release-hardening helpers: wrapper bootstrap scripts, publishing scaffolding, CI workflows, and model benchmark utilities
 
 ## Build
 
 The project targets Java 17 and uses Gradle.
 
 ```bash
-gradle test
+./gradlew test
 ```
 
-This snapshot does not include the generated `gradle-wrapper.jar`, so `gradle` is the most reliable entry point unless you regenerate the wrapper locally.
+This snapshot now includes a lightweight `./gradlew` bootstrap script that reads `gradle/wrapper/gradle-wrapper.properties`, downloads the configured Gradle distribution when needed, and then runs the build. It is intended to keep CI and contributor onboarding working even without committing a generated `gradle-wrapper.jar`.
 
 ## Package map
 
@@ -145,6 +146,35 @@ LocalLevelModel localLevel = new LocalLevelModel().fit(raw);
 - `tslib.dataquality.OutlierDetector`
 - `tslib.dataquality.Winsorizer`
 
+### Phase 10
+
+- release hardening via Gradle bootstrap scripts and publishing config
+- CI + tag-based release workflows
+- model-selection and release-checklist docs
+- `tslib.evaluation.ModelBenchmark`
+- `tslib.evaluation.BenchmarkSummary`
+
+## Release hardening
+
+This snapshot adds release-oriented repo plumbing:
+
+- lightweight `./gradlew` bootstrap scripts for Unix and Windows
+- `maven-publish`, signing, and local build-repo publishing tasks
+- CI and tag-driven release workflows under `.github/workflows/`
+- `docs/MODEL_SELECTION_GUIDE.md`, `docs/RELEASE_CHECKLIST.md`, and `docs/BENCHMARKING.md`
+- a small benchmark helper via `tslib.evaluation.ModelBenchmark` and `BenchmarkSummary`
+
+## Publishing
+
+For local validation:
+
+```bash
+./gradlew publishToMavenLocal
+./gradlew publish
+```
+
+For tagged builds, see `docs/RELEASE_CHECKLIST.md` and `.github/workflows/release.yml`.
+
 ## Examples
 
 See the `examples/` directory for runnable snippets:
@@ -160,6 +190,7 @@ See the `examples/` directory for runnable snippets:
 - `AutoSelectionExample.java`
 - `ArimaxExample.java`
 - `DataQualityExample.java`
+- `BenchmarkComparisonExample.java`
 
 ## Notes
 

@@ -2,10 +2,14 @@ plugins {
     id 'java-library'
     id 'idea'
     id 'eclipse'
+    id 'jacoco'
+    id 'maven-publish'
+    id 'signing'
 }
 
 group = 'io.github.navdeep-g'
-version = '0.1.0-SNAPSHOT'
+version = findProperty('releaseVersion') ?: '0.1.0-SNAPSHOT'
+artifactId = 'tslib'
 
 description = 'tslib - Time series analysis and forecasting utilities for Java'
 
@@ -43,6 +47,18 @@ tasks.withType(Test).configureEach {
     }
 }
 
+jacoco {
+    toolVersion = '0.8.12'
+}
+
+tasks.named('jacocoTestReport') {
+    dependsOn tasks.test
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
 jar {
     manifest {
         attributes(
@@ -50,5 +66,86 @@ jar {
             'Implementation-Version': project.version,
             'Automatic-Module-Name': 'tslib'
         )
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifactId = project.artifactId
+
+            pom {
+                name = 'tslib'
+                description = project.description
+                url = 'https://github.com/navdeep-G/tslib'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'navdeep-g'
+                        name = 'Navdeep G'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/navdeep-G/tslib.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/navdeep-G/tslib.git'
+                    url = 'https://github.com/navdeep-G/tslib'
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = 'buildRepo'
+            url = layout.buildDirectory.dir('repo')
+        }
+
+        if (System.getenv('OSSRH_USERNAME') && System.getenv('OSSRH_PASSWORD')) {
+            maven {
+                name = 'OSSRH'
+                url = version.toString().endsWith('SNAPSHOT')
+                        ? uri('https://s01.oss.sonatype.org/content/repositories/snapshots/')
+                        : uri('https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/')
+                credentials {
+                    username = System.getenv('OSSRH_USERNAME')
+                    password = System.getenv('OSSRH_PASSWORD')
+                }
+            }
+        }
+
+        if (System.getenv('GITHUB_ACTOR') && System.getenv('GITHUB_TOKEN')) {
+            maven {
+                name = 'GitHubPackages'
+                url = uri('https://maven.pkg.github.com/navdeep-G/tslib')
+                credentials {
+                    username = System.getenv('GITHUB_ACTOR')
+                    password = System.getenv('GITHUB_TOKEN')
+                }
+            }
+        }
+    }
+}
+
+signing {
+    def signingKey = findProperty('signingKey') ?: System.getenv('SIGNING_KEY')
+    def signingPassword = findProperty('signingPassword') ?: System.getenv('SIGNING_PASSWORD')
+    required { !version.toString().endsWith('SNAPSHOT') && gradle.taskGraph.allTasks*.name.any { it.startsWith('publish') } }
+    if (signingKey && signingPassword) {
+        useInMemoryPgpKeys(signingKey, signingPassword)
+        sign publishing.publications.mavenJava
+    }
+}
+
+tasks.register('printReleaseCoords') {
+    group = 'release'
+    description = 'Prints the Maven coordinates for this build.'
+    doLast {
+        println "${project.group}:${project.artifactId}:${project.version}"
     }
 }

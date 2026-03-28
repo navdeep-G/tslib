@@ -27,7 +27,8 @@ public final class ForecastIntervals {
         for (int i = 0; i < forecasts.size(); i++) {
             int step = i + 1;
             double varianceScale = increasingUncertainty ? step : (1.0 + 0.25 * i);
-            double std = Math.sqrt(Math.max(1e-12, baseVariance * varianceScale));
+            double variance = Math.max(1e-12, baseVariance) * varianceScale;
+            double std = Math.sqrt(variance);
             double point = forecasts.get(i);
             result.add(new PredictionInterval(step, point, point - z * std, point + z * std, confidenceLevel));
         }

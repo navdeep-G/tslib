@@ -25,7 +25,7 @@ public final class OutlierDetector {
             double diff = value - mean;
             variance += diff * diff;
         }
-        variance /= Math.max(1, data.size() - 1);
+        variance /= data.size();
         double std = Math.sqrt(Math.max(variance, 1e-12));
         List<Integer> result = new ArrayList<>();
         for (int i = 0; i < data.size(); i++) {
