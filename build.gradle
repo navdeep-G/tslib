@@ -34,6 +34,17 @@ dependencies {
 
 tasks.withType(Test).configureEach {
     useJUnit()
+
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showStandardStreams = true
+    }
+
+    reports {
+        html.required = true
+        junitXml.required = true
+    }
 }
 
 jacoco {
