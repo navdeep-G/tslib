@@ -3,18 +3,12 @@ package tslib.model.arima;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import tslib.evaluation.ForecastIntervals;
-import tslib.evaluation.IntervalForecast;
-import tslib.evaluation.PredictionInterval;
 import tslib.transform.Differencing;
 
 /**
- * A lightweight ARIMA(p, d, q) implementation using iterative conditional least squares.
- *
- * This implementation is intentionally small and dependency-light. It supports manual order
- * selection and is designed for straightforward forecasting workflows inside this library.
+ * Basic ARIMAX(p, d, q) model with contemporaneous exogenous regressors.
  */
-public class ARIMA {
+public class ARIMAX {
 
     private static final double DEFAULT_RIDGE = 1e-6;
     private static final int DEFAULT_MAX_ITERATIONS = 200;
@@ -27,29 +21,24 @@ public class ARIMA {
     private final double tolerance;
 
     private boolean fitted;
+    private int exogenousDimension;
     private double intercept;
+    private double[] exogenousCoefficients = new double[0];
     private double[] arCoefficients;
     private double[] maCoefficients;
     private double[] residuals;
-    private double[] fittedDifferenced;
     private double innovationVariance;
     private List<Double> originalData;
     private List<Double> differencedData;
-    private List<Double> fittedSeries;
+    private double[][] trainingExogenous;
 
-    public ARIMA(int p, int d, int q) {
+    public ARIMAX(int p, int d, int q) {
         this(p, d, q, DEFAULT_MAX_ITERATIONS, DEFAULT_TOLERANCE);
     }
 
-    public ARIMA(int p, int d, int q, int maxIterations, double tolerance) {
+    public ARIMAX(int p, int d, int q, int maxIterations, double tolerance) {
         if (p < 0 || d < 0 || q < 0) {
-            throw new IllegalArgumentException("ARIMA orders must be >= 0");
-        }
-        if (maxIterations < 1) {
-            throw new IllegalArgumentException("maxIterations must be >= 1");
-        }
-        if (tolerance <= 0) {
-            throw new IllegalArgumentException("tolerance must be > 0");
+            throw new IllegalArgumentException("Orders must be >= 0");
         }
         this.p = p;
         this.d = d;
@@ -59,12 +48,10 @@ public class ARIMA {
         this.arCoefficients = new double[p];
         this.maCoefficients = new double[q];
         this.residuals = new double[0];
-        this.fittedDifferenced = new double[0];
     }
 
-    public ARIMA fit(List<Double> data) {
-        validateInputData(data);
-
+    public ARIMAX fit(List<Double> data, double[][] exogenous) {
+        validateInputs(data, exogenous);
         this.originalData = new ArrayList<>(data);
         this.differencedData = Differencing.difference(data, d);
         if (differencedData.isEmpty()) {
@@ -72,70 +59,61 @@ public class ARIMA {
         }
 
         double[] y = toArray(differencedData);
+        this.trainingExogenous = alignExogenous(exogenous, d);
+        this.exogenousDimension = trainingExogenous[0].length;
+
         int maxLag = Math.max(p, q);
         if (y.length <= maxLag) {
-            throw new IllegalArgumentException("Time series is too short for the requested ARIMA order");
+            throw new IllegalArgumentException("Time series is too short for the requested ARIMAX order");
         }
 
-        int parameterCount = 1 + p + q;
+        int parameterCount = 1 + exogenousDimension + p + q;
         double[] params = new double[parameterCount];
         params[0] = mean(y);
         double[] currentResiduals = new double[y.length];
 
         for (int iteration = 0; iteration < maxIterations; iteration++) {
-            RegressionData regressionData = buildRegressionData(y, currentResiduals, maxLag);
+            RegressionData regressionData = buildRegressionData(y, trainingExogenous, currentResiduals, maxLag);
             double[] nextParams = ordinaryLeastSquares(regressionData.features, regressionData.targets, DEFAULT_RIDGE);
-            double[] nextResiduals = computeResiduals(y, nextParams);
-
+            double[] nextResiduals = computeResiduals(y, trainingExogenous, nextParams);
             if (maxAbsDiff(params, nextParams) < tolerance) {
                 params = nextParams;
                 currentResiduals = nextResiduals;
                 break;
             }
-
             params = nextParams;
             currentResiduals = nextResiduals;
         }
 
         this.intercept = params[0];
-        this.arCoefficients = Arrays.copyOfRange(params, 1, 1 + p);
-        this.maCoefficients = Arrays.copyOfRange(params, 1 + p, 1 + p + q);
-        this.residuals = computeResiduals(y, params);
-        this.fittedDifferenced = computePredictions(y, params);
+        this.exogenousCoefficients = Arrays.copyOfRange(params, 1, 1 + exogenousDimension);
+        this.arCoefficients = Arrays.copyOfRange(params, 1 + exogenousDimension, 1 + exogenousDimension + p);
+        this.maCoefficients = Arrays.copyOfRange(params, 1 + exogenousDimension + p, parameterCount);
+        this.residuals = computeResiduals(y, trainingExogenous, params);
         this.innovationVariance = meanSquared(this.residuals, maxLag);
-        this.fittedSeries = buildFittedSeries();
         this.fitted = true;
         return this;
     }
 
-    /**
-     * Fits the model and returns an in-sample fitted series followed by future forecasts.
-     */
-    public List<Double> forecast(List<Double> data, int steps) {
-        fit(data);
-        List<Double> result = new ArrayList<>(fittedSeries);
-        result.addAll(forecast(steps));
-        return result;
-    }
-
-    /**
-     * Forecasts future values from the fitted model.
-     */
-    public List<Double> forecast(int steps) {
-        requireFitted();
-        if (steps < 0) {
-            throw new IllegalArgumentException("Steps must be >= 0");
+    public List<Double> forecast(double[][] futureExogenous) {
+        requireFit();
+        if (futureExogenous == null) {
+            throw new IllegalArgumentException("Future exogenous matrix must not be null");
         }
-        if (steps == 0) {
-            return new ArrayList<>();
+        for (double[] row : futureExogenous) {
+            if (row == null || row.length != exogenousDimension) {
+                throw new IllegalArgumentException("Each future exogenous row must match the training exogenous dimension");
+            }
         }
-
         List<Double> yHistory = new ArrayList<>(differencedData);
         List<Double> residualHistory = toList(residuals);
-        List<Double> forecastedDifferenced = new ArrayList<>(steps);
+        List<Double> forecastedDifferenced = new ArrayList<>(futureExogenous.length);
 
-        for (int h = 0; h < steps; h++) {
+        for (double[] row : futureExogenous) {
             double prediction = intercept;
+            for (int j = 0; j < exogenousDimension; j++) {
+                prediction += exogenousCoefficients[j] * row[j];
+            }
             for (int i = 0; i < p; i++) {
                 int index = yHistory.size() - 1 - i;
                 if (index >= 0) {
@@ -148,23 +126,16 @@ public class ARIMA {
                     prediction += maCoefficients[j] * residualHistory.get(index);
                 }
             }
-
             forecastedDifferenced.add(prediction);
             yHistory.add(prediction);
             residualHistory.add(0.0);
         }
-
         return Differencing.inverseDifference(forecastedDifferenced, originalData, d);
     }
 
-    public List<Double> getFittedSeries() {
+    public double[] getExogenousCoefficients() {
         requireFitted();
-        return new ArrayList<>(fittedSeries);
-    }
-
-    public List<Double> getResiduals() {
-        requireFitted();
-        return toList(residuals);
+        return Arrays.copyOf(exogenousCoefficients, exogenousCoefficients.length);
     }
 
     public double[] getArCoefficients() {
@@ -177,9 +148,9 @@ public class ARIMA {
         return Arrays.copyOf(maCoefficients, maCoefficients.length);
     }
 
-    public double getIntercept() {
+    public List<Double> getResiduals() {
         requireFitted();
-        return intercept;
+        return toList(residuals);
     }
 
     public double getInnovationVariance() {
@@ -187,59 +158,18 @@ public class ARIMA {
         return innovationVariance;
     }
 
-    public int getP() {
-        return p;
-    }
-
-    public int getD() {
-        return d;
-    }
-
-    public int getQ() {
-        return q;
-    }
-
-    public List<PredictionInterval> forecastIntervals(int steps, double confidenceLevel) {
-        requireFitted();
-        List<Double> forecast = forecast(steps);
-        return ForecastIntervals.normalIntervals(forecast, innovationVariance, confidenceLevel, d > 0 || q > 0);
-    }
-
-    public IntervalForecast forecastWithIntervals(int steps, double confidenceLevel) {
-        List<Double> forecast = forecast(steps);
-        return ForecastIntervals.wrap(forecast, forecastIntervals(steps, confidenceLevel));
-    }
-
-    private List<Double> buildFittedSeries() {
-        List<Double> fittedOriginal = new ArrayList<>(originalData);
-        int maxLag = Math.max(p, q);
-
-        for (int diffIndex = maxLag; diffIndex < fittedDifferenced.length; diffIndex++) {
-            int originalIndex = diffIndex + d;
-            if (originalIndex >= originalData.size()) {
-                break;
-            }
-            if (d == 0) {
-                fittedOriginal.set(originalIndex, fittedDifferenced[diffIndex]);
-                continue;
-            }
-            List<Double> history = originalData.subList(0, originalIndex);
-            double restored = Differencing.inverseDifference(List.of(fittedDifferenced[diffIndex]), history, d).get(0);
-            fittedOriginal.set(originalIndex, restored);
-        }
-        return fittedOriginal;
-    }
-
-    private RegressionData buildRegressionData(double[] y, double[] currentResiduals, int maxLag) {
+    private RegressionData buildRegressionData(double[] y, double[][] x, double[] currentResiduals, int maxLag) {
         int rows = y.length - maxLag;
-        int columns = 1 + p + q;
+        int columns = 1 + exogenousDimension + p + q;
         double[][] features = new double[rows][columns];
         double[] targets = new double[rows];
-
         for (int row = 0; row < rows; row++) {
             int t = row + maxLag;
             int column = 0;
             features[row][column++] = 1.0;
+            for (int j = 0; j < exogenousDimension; j++) {
+                features[row][column++] = x[t][j];
+            }
             for (int i = 1; i <= p; i++) {
                 features[row][column++] = y[t - i];
             }
@@ -248,35 +178,35 @@ public class ARIMA {
             }
             targets[row] = y[t];
         }
-
         return new RegressionData(features, targets);
     }
 
-    private double[] computePredictions(double[] y, double[] params) {
+    private double[] computeResiduals(double[] y, double[][] x, double[] params) {
         double[] predictions = new double[y.length];
         double[] stateResiduals = new double[y.length];
         for (int t = 0; t < y.length; t++) {
             double prediction = params[0];
+            int paramIndex = 1;
+            for (int j = 0; j < exogenousDimension; j++) {
+                prediction += params[paramIndex++] * x[t][j];
+            }
             for (int i = 0; i < p; i++) {
                 int index = t - 1 - i;
                 if (index >= 0) {
-                    prediction += params[1 + i] * y[index];
+                    prediction += params[paramIndex] * y[index];
                 }
+                paramIndex++;
             }
             for (int j = 0; j < q; j++) {
                 int index = t - 1 - j;
                 if (index >= 0) {
-                    prediction += params[1 + p + j] * stateResiduals[index];
+                    prediction += params[paramIndex] * stateResiduals[index];
                 }
+                paramIndex++;
             }
             predictions[t] = prediction;
             stateResiduals[t] = y[t] - prediction;
         }
-        return predictions;
-    }
-
-    private double[] computeResiduals(double[] y, double[] params) {
-        double[] predictions = computePredictions(y, params);
         double[] result = new double[y.length];
         for (int i = 0; i < y.length; i++) {
             result[i] = y[i] - predictions[i];
@@ -284,12 +214,26 @@ public class ARIMA {
         return result;
     }
 
+    private double[][] alignExogenous(double[][] exogenous, int offset) {
+        if (exogenous.length != originalData.size()) {
+            throw new IllegalArgumentException("Exogenous matrix must have the same number of rows as the target series");
+        }
+        int dimension = exogenous[0].length;
+        double[][] aligned = new double[exogenous.length - offset][dimension];
+        for (int i = offset; i < exogenous.length; i++) {
+            if (exogenous[i] == null || exogenous[i].length != dimension) {
+                throw new IllegalArgumentException("All exogenous rows must share the same dimension");
+            }
+            System.arraycopy(exogenous[i], 0, aligned[i - offset], 0, dimension);
+        }
+        return aligned;
+    }
+
     private double[] ordinaryLeastSquares(double[][] x, double[] y, double ridge) {
         int rows = x.length;
         int cols = x[0].length;
         double[][] xtx = new double[cols][cols];
         double[] xty = new double[cols];
-
         for (int r = 0; r < rows; r++) {
             for (int i = 0; i < cols; i++) {
                 xty[i] += x[r][i] * y[r];
@@ -298,11 +242,9 @@ public class ARIMA {
                 }
             }
         }
-
         for (int i = 0; i < cols; i++) {
             xtx[i][i] += ridge;
         }
-
         return solveLinearSystem(xtx, xty);
     }
 
@@ -313,7 +255,6 @@ public class ARIMA {
             System.arraycopy(matrix[i], 0, augmented[i], 0, n);
             augmented[i][n] = vector[i];
         }
-
         for (int pivot = 0; pivot < n; pivot++) {
             int bestRow = pivot;
             for (int row = pivot + 1; row < n; row++) {
@@ -321,14 +262,10 @@ public class ARIMA {
                     bestRow = row;
                 }
             }
-            swapRows(augmented, pivot, bestRow);
-
-            double pivotValue = augmented[pivot][pivot];
-            if (Math.abs(pivotValue) < 1e-12) {
-                pivotValue = pivotValue >= 0 ? 1e-12 : -1e-12;
-                augmented[pivot][pivot] = pivotValue;
-            }
-
+            double[] tmp = augmented[pivot];
+            augmented[pivot] = augmented[bestRow];
+            augmented[bestRow] = tmp;
+            double pivotValue = Math.abs(augmented[pivot][pivot]) < 1e-12 ? 1e-12 : augmented[pivot][pivot];
             for (int row = pivot + 1; row < n; row++) {
                 double factor = augmented[row][pivot] / pivotValue;
                 for (int col = pivot; col <= n; col++) {
@@ -336,7 +273,6 @@ public class ARIMA {
                 }
             }
         }
-
         double[] solution = new double[n];
         for (int row = n - 1; row >= 0; row--) {
             double sum = augmented[row][n];
@@ -346,15 +282,6 @@ public class ARIMA {
             solution[row] = sum / augmented[row][row];
         }
         return solution;
-    }
-
-    private void swapRows(double[][] matrix, int i, int j) {
-        if (i == j) {
-            return;
-        }
-        double[] tmp = matrix[i];
-        matrix[i] = matrix[j];
-        matrix[j] = tmp;
     }
 
     private double mean(double[] values) {
@@ -400,14 +327,21 @@ public class ARIMA {
         return result;
     }
 
-    private void validateInputData(List<Double> data) {
+    private void validateInputs(List<Double> data, double[][] exogenous) {
         if (data == null || data.isEmpty()) {
-            throw new IllegalArgumentException("Input data must not be null or empty.");
+            throw new IllegalArgumentException("Input data must not be null or empty");
         }
-        int minimumSize = Math.max(3, d + Math.max(p, q) + 1);
+        if (exogenous == null || exogenous.length != data.size() || exogenous.length == 0 || exogenous[0] == null || exogenous[0].length == 0) {
+            throw new IllegalArgumentException("Exogenous matrix must have one non-empty row per observation");
+        }
+        int minimumSize = Math.max(4, d + Math.max(p, q) + 2);
         if (data.size() < minimumSize) {
-            throw new IllegalArgumentException("Time series is too short for the requested ARIMA order");
+            throw new IllegalArgumentException("Time series is too short for the requested ARIMAX order");
         }
+    }
+
+    private void requireFit() {
+        requireFitted();
     }
 
     private void requireFitted() {

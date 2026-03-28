@@ -2,6 +2,9 @@ package tslib.model.statespace;
 
 import java.util.ArrayList;
 import java.util.List;
+import tslib.evaluation.ForecastIntervals;
+import tslib.evaluation.IntervalForecast;
+import tslib.evaluation.PredictionInterval;
 
 /**
  * Local-level state-space model with simple variance search.
@@ -67,6 +70,16 @@ public class LocalLevelModel {
     public List<Double> getForecastVariances(int steps) {
         requireFit();
         return filter.forecastVariances(steps);
+    }
+
+    public List<PredictionInterval> forecastIntervals(int steps, double confidenceLevel) {
+        requireFit();
+        return ForecastIntervals.normalIntervals(forecast(steps), getForecastVariances(steps), confidenceLevel);
+    }
+
+    public IntervalForecast forecastWithIntervals(int steps, double confidenceLevel) {
+        List<Double> forecast = forecast(steps);
+        return ForecastIntervals.wrap(forecast, forecastIntervals(steps, confidenceLevel));
     }
 
     public double getProcessVariance() {
