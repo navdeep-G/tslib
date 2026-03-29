@@ -56,6 +56,19 @@ Compatibility aliases added in this patch series:
 - `tslib.model.LocalLevelModel` forwards to `tslib.model.statespace.LocalLevelModel`
 - `tslib.stats.Stats` forwards to `tslib.util.Stats`
 
+## Model chooser
+
+| Use case | Start with | Compare against | Notes |
+| --- | --- | --- | --- |
+| Level-only or gently trending series | `DoubleExpSmoothing` | `ARIMA`, `LocalLevelModel` | Good lightweight baseline. |
+| Strong repeating seasonality | `TripleExpSmoothing` | `SARIMA` | Prefer `SARIMA` when seasonal autocorrelation matters. |
+| Differenced stationary dynamics | `ARIMA` | `LocalLevelModel` | Inspect ADF/KPSS and ACF/PACF first. |
+| Seasonality plus differencing | `SARIMA` | `TripleExpSmoothing` | Use the seasonal period consistently across preprocessing and backtests. |
+| External drivers available | `ARIMAX` | `ARIMA` | Validate regressor alignment and holdout availability. |
+| Smooth latent state / baseline uncertainty | `LocalLevelModel` | `ARIMA` | Good compact state-space benchmark. |
+
+For a longer guide, see `docs/MODEL_SELECTION_GUIDE.md`.
+
 ## Quick start
 
 ```java
@@ -154,6 +167,15 @@ LocalLevelModel localLevel = new LocalLevelModel().fit(raw);
 - `tslib.evaluation.ModelBenchmark`
 - `tslib.evaluation.BenchmarkSummary`
 
+
+### Phase 11
+
+- release-candidate hardening via stronger edge-case and workflow tests
+- README model chooser and testing guidance
+- benchmark markdown/report helpers and benchmark-results template
+- package-level Javadocs for primary public packages
+- Java 17/21 CI matrix plus nightly verification workflow
+
 ## Release hardening
 
 This snapshot adds release-oriented repo plumbing:
@@ -191,6 +213,20 @@ See the `examples/` directory for runnable snippets:
 - `ArimaxExample.java`
 - `DataQualityExample.java`
 - `BenchmarkComparisonExample.java`
+- `GenerateBenchmarkReportExample.java`
+- `HotelBenchmarkComparisonExample.java`
+
+## Testing
+
+Run the full verification flow locally with:
+
+```bash
+./gradlew clean test jacocoTestReport javadoc
+```
+
+The console is configured to print individual test results. HTML reports are generated under `build/reports/tests/test` and `build/reports/jacoco/test/html`.
+
+For a release candidate pass, also review `docs/RELEASE_CHECKLIST.md`, `docs/TESTING_GUIDE.md`, and `docs/BENCHMARK_RESULTS.md`.
 
 ## Notes
 

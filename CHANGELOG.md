@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Phase 11
+- add release-candidate hardening with broader regression tests
+- add benchmark markdown export helper and benchmark-results template
+- add README model chooser and testing guide
+- add package-level Javadocs for core public packages
+- add Java 17/21 CI matrix and nightly verification workflow
+
+
+## Unreleased
+
 ### Repo maintenance
 - align Gradle metadata with `tslib`
 - replace `jcenter()` with `mavenCentral()`

@@ -1,49 +1,51 @@
 plugins {
     id 'java-library'
+    id 'idea'
+    id 'eclipse'
+    id 'jacoco'
     id 'maven-publish'
     id 'signing'
-    id 'jacoco'
 }
 
 group = 'io.github.navdeep-g'
 version = findProperty('releaseVersion') ?: '0.1.0-SNAPSHOT'
-
 base {
     archivesName = 'tslib'
 }
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-
-    withSourcesJar()
-    withJavadocJar()
-}
+description = 'tslib - Time series analysis and forecasting utilities for Java'
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation 'org.apache.commons:commons-math3:3.6.1'
+    api 'org.apache.commons:commons-math3:3.6.1'
     implementation 'com.google.guava:guava:29.0-jre'
 
     testImplementation 'junit:junit:4.13.2'
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    withSourcesJar()
+    withJavadocJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
 tasks.withType(Test).configureEach {
     useJUnit()
-
     testLogging {
-        events "passed", "skipped", "failed"
-        exceptionFormat "full"
-        showStandardStreams = true
-    }
-
-    reports {
-        html.required = true
-        junitXml.required = true
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat 'full'
+        showCauses true
+        showExceptions true
+        showStackTraces true
     }
 }
 
@@ -52,11 +54,20 @@ jacoco {
 }
 
 tasks.named('jacocoTestReport') {
-    dependsOn tasks.named('test')
+    dependsOn tasks.test
     reports {
         xml.required = true
         html.required = true
-        csv.required = false
+    }
+}
+
+jar {
+    manifest {
+        attributes(
+            'Implementation-Title': 'tslib',
+            'Implementation-Version': project.version,
+            'Automatic-Module-Name': 'tslib'
+        )
     }
 }
 
@@ -64,25 +75,27 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
-            groupId = project.group.toString()
             artifactId = base.archivesName.get()
-            version = project.version.toString()
 
             pom {
                 name = 'tslib'
-                description = 'Java time-series analysis and forecasting library'
+                description = project.description
                 url = 'https://github.com/navdeep-G/tslib'
-
                 licenses {
                     license {
                         name = 'MIT License'
                         url = 'https://opensource.org/licenses/MIT'
                     }
                 }
-
+                developers {
+                    developer {
+                        id = 'navdeep-g'
+                        name = 'Navdeep G'
+                    }
+                }
                 scm {
                     connection = 'scm:git:git://github.com/navdeep-G/tslib.git'
-                    developerConnection = 'scm:git:ssh://github.com/navdeep-G/tslib.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/navdeep-G/tslib.git'
                     url = 'https://github.com/navdeep-G/tslib'
                 }
             }
@@ -91,30 +104,30 @@ publishing {
 
     repositories {
         maven {
-            name = 'localBuildRepo'
-            url = uri(layout.buildDirectory.dir('repo'))
+            name = 'buildRepo'
+            url = layout.buildDirectory.dir('repo')
         }
 
-        if (findProperty('gpr.user') && findProperty('gpr.key')) {
+        if (System.getenv('OSSRH_USERNAME') && System.getenv('OSSRH_PASSWORD')) {
             maven {
-                name = 'GitHubPackages'
-                url = uri('https://maven.pkg.github.com/navdeep-G/tslib')
+                name = 'OSSRH'
+                url = version.toString().endsWith('SNAPSHOT')
+                        ? uri('https://s01.oss.sonatype.org/content/repositories/snapshots/')
+                        : uri('https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/')
                 credentials {
-                    username = findProperty('gpr.user')
-                    password = findProperty('gpr.key')
+                    username = System.getenv('OSSRH_USERNAME')
+                    password = System.getenv('OSSRH_PASSWORD')
                 }
             }
         }
 
-        if (findProperty('sonatypeUsername') && findProperty('sonatypePassword')) {
+        if (System.getenv('GITHUB_ACTOR') && System.getenv('GITHUB_TOKEN')) {
             maven {
-                name = 'OSSRH'
-                def releasesRepoUrl = 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/'
-                def snapshotsRepoUrl = 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
-                url = uri(version.toString().endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl)
+                name = 'GitHubPackages'
+                url = uri('https://maven.pkg.github.com/navdeep-G/tslib')
                 credentials {
-                    username = findProperty('sonatypeUsername')
-                    password = findProperty('sonatypePassword')
+                    username = System.getenv('GITHUB_ACTOR')
+                    password = System.getenv('GITHUB_TOKEN')
                 }
             }
         }
@@ -122,9 +135,9 @@ publishing {
 }
 
 signing {
-    def signingKey = findProperty('signingKey')
-    def signingPassword = findProperty('signingPassword')
-
+    def signingKey = findProperty('signingKey') ?: System.getenv('SIGNING_KEY')
+    def signingPassword = findProperty('signingPassword') ?: System.getenv('SIGNING_PASSWORD')
+    required { !version.toString().endsWith('SNAPSHOT') && gradle.taskGraph.allTasks*.name.any { it.startsWith('publish') } }
     if (signingKey && signingPassword) {
         useInMemoryPgpKeys(signingKey, signingPassword)
         sign publishing.publications.mavenJava
@@ -132,8 +145,8 @@ signing {
 }
 
 tasks.register('printReleaseCoords') {
-    group = 'publishing'
-    description = 'Prints Maven coordinates for the current build.'
+    group = 'release'
+    description = 'Prints the Maven coordinates for this build.'
     doLast {
         println "${project.group}:${base.archivesName.get()}:${project.version}"
     }
