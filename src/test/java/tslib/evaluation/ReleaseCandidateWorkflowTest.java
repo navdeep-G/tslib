@@ -1,5 +1,6 @@
 package tslib.evaluation;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,13 +9,15 @@ import tslib.dataquality.MissingValueImputer;
 import tslib.model.ARIMA;
 import tslib.model.LocalLevelModel;
 import tslib.model.TripleExpSmoothing;
+
 import static org.junit.Assert.*;
 
 public class ReleaseCandidateWorkflowTest {
 
     @Test
     public void benchmarkWorkflowProducesSortedMarkdownReadyRows() {
-        List<Double> raw = MissingValueImputer.linearInterpolation(List.of(12.0, null, 13.0, 16.0, 18.0, 17.0, 20.0, 22.0, 21.0, 24.0, 26.0, 25.0));
+        List<Double> raw = MissingValueImputer.linearInterpolation(Arrays.asList(
+                12.0, null, 13.0, 16.0, 18.0, 17.0, 20.0, 22.0, 21.0, 24.0, 26.0, 25.0));
 
         Map<String, ForecastFunction> models = new LinkedHashMap<>();
         models.put("ARIMA(0,1,0)", (train, horizon) -> new ARIMA(0, 1, 0).forecast(train, horizon));
