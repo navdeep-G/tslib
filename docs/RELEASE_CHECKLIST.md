@@ -7,6 +7,7 @@
 - update `CHANGELOG.md`
 - confirm version in `build.gradle` or `-PreleaseVersion=...`
 - verify generated artifacts with `./gradlew publish`
+- review `docs/TESTING_GUIDE.md` and confirm release-candidate checks
 - review benchmark output on representative data
 
 ## Tagging
