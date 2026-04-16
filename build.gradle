@@ -5,6 +5,8 @@ plugins {
     id 'jacoco'
     id 'maven-publish'
     id 'signing'
+    id 'checkstyle'
+    id 'com.github.spotbugs' version '6.0.9'
 }
 
 group = 'io.github.navdeep-g'
@@ -21,7 +23,7 @@ repositories {
 
 dependencies {
     api 'org.apache.commons:commons-math3:3.6.1'
-    implementation 'com.google.guava:guava:29.0-jre'
+    implementation 'com.google.guava:guava:33.2.1-jre'
 
     testImplementation 'junit:junit:4.13.2'
 }
@@ -57,6 +59,36 @@ tasks.named('jacocoTestReport') {
     dependsOn tasks.test
     reports {
         xml.required = true
+        html.required = true
+    }
+}
+
+tasks.named('jacocoTestCoverageVerification') {
+    dependsOn tasks.jacocoTestReport
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.70
+            }
+        }
+    }
+}
+
+checkstyle {
+    toolVersion = '10.17.0'
+    configFile = file("${rootDir}/config/checkstyle/checkstyle.xml")
+    ignoreFailures = true
+}
+
+spotbugs {
+    ignoreFailures = true
+}
+
+tasks.withType(com.github.spotbugs.snom.SpotBugsTask).configureEach {
+    reports {
+        xml.required = false
         html.required = true
     }
 }
