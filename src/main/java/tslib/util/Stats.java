@@ -1,6 +1,5 @@
 package tslib.util;
 
-import java.util.Collections;
 import java.util.List;
 import org.apache.commons.math3.linear.*;
 
@@ -38,49 +37,70 @@ public class Stats {
 
     public static int getMinimumIndex(List<Double> data) {
         validateNonEmpty(data);
-        return data.indexOf(Collections.min(data));
+        int minIndex = 0;
+        double min = data.get(0);
+        for (int i = 1; i < data.size(); i++) {
+            double value = data.get(i);
+            if (value < min) {
+                min = value;
+                minIndex = i;
+            }
+        }
+        return minIndex;
     }
 
     public static int getMaximumIndex(List<Double> data) {
         validateNonEmpty(data);
-        return data.indexOf(Collections.max(data));
+        int maxIndex = 0;
+        double max = data.get(0);
+        for (int i = 1; i < data.size(); i++) {
+            double value = data.get(i);
+            if (value > max) {
+                max = value;
+                maxIndex = i;
+            }
+        }
+        return maxIndex;
     }
 
     public static double getMinimum(List<Double> data) {
-        return data.get(getMinimumIndex(data));
+        validateNonEmpty(data);
+        double min = data.get(0);
+        for (int i = 1; i < data.size(); i++) {
+            double value = data.get(i);
+            if (value < min) min = value;
+        }
+        return min;
     }
 
     public static double getMaximum(List<Double> data) {
-        return data.get(getMaximumIndex(data));
+        validateNonEmpty(data);
+        double max = data.get(0);
+        for (int i = 1; i < data.size(); i++) {
+            double value = data.get(i);
+            if (value > max) max = value;
+        }
+        return max;
     }
 
-    /**
-     * Optimized method to find both min and max in a single pass
-     */
     public static double[] getMinMax(List<Double> data) {
         validateNonEmpty(data);
         double min = data.get(0);
         double max = data.get(0);
-        
         for (int i = 1; i < data.size(); i++) {
             double value = data.get(i);
             if (value < min) min = value;
             if (value > max) max = value;
         }
-        
         return new double[]{min, max};
     }
 
-    /**
-     * Optimized method to find min index and max index in a single pass
-     */
     public static int[] getMinMaxIndices(List<Double> data) {
         validateNonEmpty(data);
         int minIndex = 0;
         int maxIndex = 0;
         double min = data.get(0);
         double max = data.get(0);
-        
         for (int i = 1; i < data.size(); i++) {
             double value = data.get(i);
             if (value < min) {
@@ -92,7 +112,6 @@ public class Stats {
                 maxIndex = i;
             }
         }
-        
         return new int[]{minIndex, maxIndex};
     }
 

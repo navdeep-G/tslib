@@ -7,6 +7,7 @@ import tslib.evaluation.ForecastIntervals;
 import tslib.evaluation.IntervalForecast;
 import tslib.evaluation.PredictionInterval;
 import tslib.transform.Differencing;
+import tslib.util.LinearAlgebra;
 
 /**
  * A compact seasonal ARIMA implementation.
@@ -97,7 +98,7 @@ public class SARIMA {
             throw new IllegalArgumentException("Differencing orders are too high for the provided series");
         }
 
-        double[] y = toArray(stationaryData);
+        double[] y = LinearAlgebra.toArray(stationaryData);
         int maxLag = Math.max(maxLag(arLags), maxLag(maLags));
         if (y.length <= maxLag) {
             throw new IllegalArgumentException("Time series is too short for the requested SARIMA order");
@@ -105,15 +106,16 @@ public class SARIMA {
 
         int parameterCount = 1 + arLags.length + maLags.length;
         double[] params = new double[parameterCount];
-        params[0] = mean(y);
+        params[0] = LinearAlgebra.mean(y);
         double[] currentResiduals = new double[y.length];
 
         for (int iteration = 0; iteration < maxIterations; iteration++) {
             RegressionData regressionData = buildRegressionData(y, currentResiduals, maxLag);
-            double[] nextParams = ordinaryLeastSquares(regressionData.features, regressionData.targets, DEFAULT_RIDGE);
-            double[] nextResiduals = computeResiduals(y, nextParams);
+            double[] nextParams = LinearAlgebra.ordinaryLeastSquares(regressionData.features, regressionData.targets, DEFAULT_RIDGE);
+            double[] nextPredictions = computePredictions(y, nextParams);
+            double[] nextResiduals = subtractArrays(y, nextPredictions);
 
-            if (maxAbsDiff(params, nextParams) < tolerance) {
+            if (LinearAlgebra.maxAbsDiff(params, nextParams) < tolerance) {
                 params = nextParams;
                 currentResiduals = nextResiduals;
                 break;
@@ -125,9 +127,9 @@ public class SARIMA {
 
         this.intercept = params[0];
         assignCoefficients(params);
-        this.residuals = computeResiduals(y, params);
         this.fittedStationary = computePredictions(y, params);
-        this.innovationVariance = meanSquared(this.residuals, maxLag);
+        this.residuals = subtractArrays(y, this.fittedStationary);
+        this.innovationVariance = LinearAlgebra.meanSquared(this.residuals, maxLag);
         this.fittedSeries = buildFittedSeries(maxLag);
         this.fitted = true;
         return this;
@@ -151,7 +153,7 @@ public class SARIMA {
 
         double[] params = flattenParameters();
         List<Double> yHistory = new ArrayList<>(stationaryData);
-        List<Double> residualHistory = toList(residuals);
+        List<Double> residualHistory = LinearAlgebra.toList(residuals);
         List<Double> seasonalHistory = new ArrayList<>(seasonalDifferencedData);
         List<Double> originalHistory = new ArrayList<>(originalData);
         List<Double> forecasts = new ArrayList<>(steps);
@@ -178,7 +180,7 @@ public class SARIMA {
 
     public List<Double> getResiduals() {
         requireFitted();
-        return toList(residuals);
+        return LinearAlgebra.toList(residuals);
     }
 
     public double[] getArCoefficients() {
@@ -307,11 +309,10 @@ public class SARIMA {
         return predictions;
     }
 
-    private double[] computeResiduals(double[] y, double[] params) {
-        double[] predictions = computePredictions(y, params);
-        double[] result = new double[y.length];
-        for (int i = 0; i < y.length; i++) {
-            result[i] = y[i] - predictions[i];
+    private double[] subtractArrays(double[] a, double[] b) {
+        double[] result = new double[a.length];
+        for (int i = 0; i < a.length; i++) {
+            result[i] = a[i] - b[i];
         }
         return result;
     }
@@ -476,122 +477,6 @@ public class SARIMA {
         for (int i = 1; i <= k; i++) {
             result *= (n - (k - i));
             result /= i;
-        }
-        return result;
-    }
-
-    private double[] ordinaryLeastSquares(double[][] x, double[] y, double ridge) {
-        int rows = x.length;
-        int cols = x[0].length;
-        double[][] xtx = new double[cols][cols];
-        double[] xty = new double[cols];
-
-        for (int r = 0; r < rows; r++) {
-            for (int i = 0; i < cols; i++) {
-                xty[i] += x[r][i] * y[r];
-                for (int j = 0; j < cols; j++) {
-                    xtx[i][j] += x[r][i] * x[r][j];
-                }
-            }
-        }
-
-        for (int i = 0; i < cols; i++) {
-            xtx[i][i] += ridge;
-        }
-
-        return solveLinearSystem(xtx, xty);
-    }
-
-    private double[] solveLinearSystem(double[][] matrix, double[] vector) {
-        int n = vector.length;
-        double[][] augmented = new double[n][n + 1];
-        for (int i = 0; i < n; i++) {
-            System.arraycopy(matrix[i], 0, augmented[i], 0, n);
-            augmented[i][n] = vector[i];
-        }
-
-        for (int pivot = 0; pivot < n; pivot++) {
-            int bestRow = pivot;
-            for (int row = pivot + 1; row < n; row++) {
-                if (Math.abs(augmented[row][pivot]) > Math.abs(augmented[bestRow][pivot])) {
-                    bestRow = row;
-                }
-            }
-            swapRows(augmented, pivot, bestRow);
-
-            double pivotValue = augmented[pivot][pivot];
-            if (Math.abs(pivotValue) < 1e-12) {
-                pivotValue = pivotValue >= 0 ? 1e-12 : -1e-12;
-                augmented[pivot][pivot] = pivotValue;
-            }
-
-            for (int row = pivot + 1; row < n; row++) {
-                double factor = augmented[row][pivot] / pivotValue;
-                for (int col = pivot; col <= n; col++) {
-                    augmented[row][col] -= factor * augmented[pivot][col];
-                }
-            }
-        }
-
-        double[] solution = new double[n];
-        for (int row = n - 1; row >= 0; row--) {
-            double sum = augmented[row][n];
-            for (int col = row + 1; col < n; col++) {
-                sum -= augmented[row][col] * solution[col];
-            }
-            solution[row] = sum / augmented[row][row];
-        }
-        return solution;
-    }
-
-    private void swapRows(double[][] matrix, int i, int j) {
-        if (i == j) {
-            return;
-        }
-        double[] tmp = matrix[i];
-        matrix[i] = matrix[j];
-        matrix[j] = tmp;
-    }
-
-    private double mean(double[] values) {
-        double total = 0.0;
-        for (double value : values) {
-            total += value;
-        }
-        return total / values.length;
-    }
-
-    private double meanSquared(double[] values, int skip) {
-        if (values.length <= skip) {
-            return 0.0;
-        }
-        double total = 0.0;
-        for (int i = skip; i < values.length; i++) {
-            total += values[i] * values[i];
-        }
-        return total / (values.length - skip);
-    }
-
-    private double maxAbsDiff(double[] a, double[] b) {
-        double max = 0.0;
-        for (int i = 0; i < a.length; i++) {
-            max = Math.max(max, Math.abs(a[i] - b[i]));
-        }
-        return max;
-    }
-
-    private double[] toArray(List<Double> values) {
-        double[] result = new double[values.size()];
-        for (int i = 0; i < values.size(); i++) {
-            result[i] = values.get(i);
-        }
-        return result;
-    }
-
-    private List<Double> toList(double[] values) {
-        List<Double> result = new ArrayList<>(values.length);
-        for (double value : values) {
-            result.add(value);
         }
         return result;
     }

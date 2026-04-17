@@ -90,24 +90,20 @@ public class Transform {
 
     private static double boxCoxNegLogLikelihood(List<Double> data, double lambda) {
         int n = data.size();
-        double[] transformed = new double[n];
-        double sum = 0.0;
+        double mean = 0.0;
+        double m2 = 0.0;
 
         for (int i = 0; i < n; i++) {
             double x = data.get(i);
             if (x <= 0) return Double.POSITIVE_INFINITY;
-            transformed[i] = (lambda == 0) ? Math.log(x) : (Math.pow(x, lambda) - 1.0) / lambda;
-            sum += transformed[i];
+            double t = (lambda == 0) ? Math.log(x) : (Math.pow(x, lambda) - 1.0) / lambda;
+            double delta = t - mean;
+            mean += delta / (i + 1);
+            m2 += delta * (t - mean);
         }
 
-        double mean = sum / n;
-        double variance = 0.0;
-        for (double v : transformed) {
-            variance += Math.pow(v - mean, 2);
-        }
-        variance /= n;
-
-        return Math.log(variance);
+        double variance = m2 / n;
+        return Math.log(Math.max(variance, 1e-12));
     }
 
     private static void validatePositive(List<Double> data) {

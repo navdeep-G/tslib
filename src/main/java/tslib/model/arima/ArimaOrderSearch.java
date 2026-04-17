@@ -1,6 +1,10 @@
 package tslib.model.arima;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Grid-search helpers for manual ARIMA/SARIMA order selection.
@@ -17,29 +21,31 @@ public final class ArimaOrderSearch {
 
     public static OrderScore searchBestArima(List<Double> data, int maxP, int maxD, int maxQ, Criterion criterion) {
         validateBounds(maxP, maxD, maxQ);
-        OrderScore best = null;
+
+        List<int[]> combinations = new ArrayList<>();
         for (int p = 0; p <= maxP; p++) {
             for (int d = 0; d <= maxD; d++) {
                 for (int q = 0; q <= maxQ; q++) {
-                    if (p == 0 && d == 0 && q == 0) {
-                        continue;
-                    }
-                    try {
-                        ARIMA model = new ARIMA(p, d, q).fit(data);
-                        OrderScore score = OrderScore.forArima(model, criterion);
-                        if (best == null || score.getScore() < best.getScore()) {
-                            best = score;
-                        }
-                    } catch (RuntimeException ignored) {
-                        // Skip unstable or invalid combinations.
-                    }
+                    if (p == 0 && d == 0 && q == 0) continue;
+                    combinations.add(new int[]{p, d, q});
                 }
             }
         }
-        if (best == null) {
-            throw new IllegalArgumentException("No valid ARIMA model could be fitted in the requested grid");
-        }
-        return best;
+
+        Optional<OrderScore> best = combinations.parallelStream()
+                .map(combo -> {
+                    try {
+                        ARIMA model = new ARIMA(combo[0], combo[1], combo[2]).fit(data);
+                        return OrderScore.forArima(model, criterion);
+                    } catch (RuntimeException ignored) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .min(Comparator.comparingDouble(OrderScore::getScore));
+
+        return best.orElseThrow(() ->
+                new IllegalArgumentException("No valid ARIMA model could be fitted in the requested grid"));
     }
 
     public static OrderScore searchBestSarima(
@@ -58,35 +64,36 @@ public final class ArimaOrderSearch {
             throw new IllegalArgumentException("Seasonal period must be >= 1");
         }
 
-        OrderScore best = null;
+        List<int[]> combinations = new ArrayList<>();
         for (int p = 0; p <= maxP; p++) {
             for (int d = 0; d <= maxD; d++) {
                 for (int q = 0; q <= maxQ; q++) {
                     for (int P = 0; P <= maxSeasonalP; P++) {
                         for (int D = 0; D <= maxSeasonalD; D++) {
                             for (int Q = 0; Q <= maxSeasonalQ; Q++) {
-                                if (p == 0 && d == 0 && q == 0 && P == 0 && D == 0 && Q == 0) {
-                                    continue;
-                                }
-                                try {
-                                    SARIMA model = new SARIMA(p, d, q, P, D, Q, seasonalPeriod).fit(data);
-                                    OrderScore score = OrderScore.forSarima(model, criterion);
-                                    if (best == null || score.getScore() < best.getScore()) {
-                                        best = score;
-                                    }
-                                } catch (RuntimeException ignored) {
-                                    // Skip unstable or invalid combinations.
-                                }
+                                if (p == 0 && d == 0 && q == 0 && P == 0 && D == 0 && Q == 0) continue;
+                                combinations.add(new int[]{p, d, q, P, D, Q});
                             }
                         }
                     }
                 }
             }
         }
-        if (best == null) {
-            throw new IllegalArgumentException("No valid SARIMA model could be fitted in the requested grid");
-        }
-        return best;
+
+        Optional<OrderScore> best = combinations.parallelStream()
+                .map(combo -> {
+                    try {
+                        SARIMA model = new SARIMA(combo[0], combo[1], combo[2], combo[3], combo[4], combo[5], seasonalPeriod).fit(data);
+                        return OrderScore.forSarima(model, criterion);
+                    } catch (RuntimeException ignored) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .min(Comparator.comparingDouble(OrderScore::getScore));
+
+        return best.orElseThrow(() ->
+                new IllegalArgumentException("No valid SARIMA model could be fitted in the requested grid"));
     }
 
     private static void validateBounds(int maxP, int maxD, int maxQ) {
