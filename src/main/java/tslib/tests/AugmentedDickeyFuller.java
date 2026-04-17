@@ -13,8 +13,6 @@ public class AugmentedDickeyFuller {
     private double adfStat;
     private double[] zeroPaddedDiff;
 
-    private final double ADF_THRESHOLD = -3.45;
-
     public AugmentedDickeyFuller(List<Double> ts, int lag) {
         if (lag < 1) {
             throw new IllegalArgumentException("Lag must be >= 1");
@@ -69,7 +67,9 @@ public class AugmentedDickeyFuller {
 
         double t = beta[0] / sd[0];
         this.adfStat = t;
-        this.needsDiff = t > ADF_THRESHOLD;  // Fixed logic
+        // Sample-size-aware 5% critical value from MacKinnon / Dickey-Fuller response surface
+        double cv5pct = -3.41 + (-4.0 / n);
+        this.needsDiff = t > cv5pct;
     }
 
     private double[] diff(List<Double> x) {
@@ -116,6 +116,35 @@ public class AugmentedDickeyFuller {
             sequence[i - start] = i;
         }
         return sequence;
+    }
+
+    /**
+     * Returns an approximate p-value for the ADF test using the MacKinnon / Dickey-Fuller
+     * response surface (constant + trend model). Calibrated to the Dickey-Fuller (1979) table.
+     * Result is clamped to [0.01, 0.10]; values outside this range are reported at the boundary.
+     */
+    public double getPValue() {
+        int n = ts.size() - 1;
+        // Response surface: CV(alpha, n) = c_inf + c1/n
+        double[] levels = {0.01,   0.025,  0.05,   0.10};
+        double[] cInf   = {-3.96,  -3.68,  -3.41,  -3.12};
+        double[] c1     = {-8.0,   -6.0,   -4.0,   -3.0};
+
+        double[] cv = new double[levels.length];
+        for (int i = 0; i < levels.length; i++) {
+            cv[i] = cInf[i] + c1[i] / n;
+        }
+
+        if (adfStat <= cv[0]) return levels[0];
+        if (adfStat >= cv[levels.length - 1]) return levels[levels.length - 1];
+
+        for (int i = 0; i < levels.length - 1; i++) {
+            if (adfStat >= cv[i] && adfStat <= cv[i + 1]) {
+                double frac = (adfStat - cv[i]) / (cv[i + 1] - cv[i]);
+                return levels[i] + frac * (levels[i + 1] - levels[i]);
+            }
+        }
+        return levels[levels.length - 1];
     }
 
     public boolean isNeedsDiff() {
