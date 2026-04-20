@@ -33,4 +33,30 @@ public class AugmentedDickeyFullerTest {
         System.out.println("ADF stat (trend + outlier): " + adf.getAdfStat());
         assertFalse("Expected non-stationary series with outlier", adf.isNeedsDiff());
     }
+
+    @Test
+    public void testGetPValueInRange() {
+        ArrayList<Double> x = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            x.add(i * 1.5);
+        }
+        AugmentedDickeyFuller adf = new AugmentedDickeyFuller(x);
+        double pValue = adf.getPValue();
+        assertTrue("p-value must be in [0.01, 0.10]", pValue >= 0.01 && pValue <= 0.10);
+    }
+
+    @Test
+    public void testGetPValueStationarySeries() {
+        // Stationary: white noise should have a very negative ADF stat → p-value at minimum (0.01)
+        ArrayList<Double> x = new ArrayList<>();
+        java.util.Random rng = new java.util.Random(42);
+        for (int i = 0; i < 200; i++) {
+            x.add(rng.nextGaussian());
+        }
+        AugmentedDickeyFuller adf = new AugmentedDickeyFuller(x);
+        // White noise is stationary; ADF stat should be very negative
+        assertTrue("Stationary series should have ADF stat < -3.0", adf.getAdfStat() < -3.0);
+        assertEquals("p-value should be at lower boundary (0.01) for stationary white noise",
+                0.01, adf.getPValue(), 1e-9);
+    }
 }

@@ -204,7 +204,46 @@ public class ARIMA {
     public List<PredictionInterval> forecastIntervals(int steps, double confidenceLevel) {
         requireFitted();
         List<Double> forecast = forecast(steps);
-        return ForecastIntervals.normalIntervals(forecast, innovationVariance, confidenceLevel, d > 0 || q > 0);
+        return ForecastIntervals.normalIntervals(forecast, computeStepVariances(steps), confidenceLevel);
+    }
+
+    /**
+     * Computes h-step forecast variances using the psi-weight (MA-infinity) representation.
+     * For ARMA(p,q): psi[0]=1, psi[h] = sum_i phi_i*psi[h-1-i] + theta[h-1].
+     * d-order integration is applied by cumulative summation.
+     * Var(e_h) = sigma^2 * sum_{j=0}^{h-1} psi[j]^2.
+     */
+    private List<Double> computeStepVariances(int steps) {
+        double[] psi = new double[steps];
+        if (steps > 0) {
+            psi[0] = 1.0;
+        }
+        for (int h = 1; h < steps; h++) {
+            double sum = 0.0;
+            for (int i = 0; i < p; i++) {
+                int idx = h - 1 - i;
+                if (idx >= 0) {
+                    sum += arCoefficients[i] * psi[idx];
+                }
+            }
+            if (h - 1 < q) {
+                sum += maCoefficients[h - 1];
+            }
+            psi[h] = sum;
+        }
+        for (int k = 0; k < d; k++) {
+            for (int h = 1; h < steps; h++) {
+                psi[h] += psi[h - 1];
+            }
+        }
+        List<Double> variances = new ArrayList<>(steps);
+        double cumPsiSq = 0.0;
+        double baseVar = Math.max(1e-12, innovationVariance);
+        for (int h = 0; h < steps; h++) {
+            cumPsiSq += psi[h] * psi[h];
+            variances.add(baseVar * cumPsiSq);
+        }
+        return variances;
     }
 
     public IntervalForecast forecastWithIntervals(int steps, double confidenceLevel) {

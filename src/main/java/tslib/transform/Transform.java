@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math3.analysis.UnivariateFunction;
-import org.apache.commons.math3.optimization.GoalType;
-import org.apache.commons.math3.optimization.univariate.BrentOptimizer;
-import org.apache.commons.math3.optimization.univariate.UnivariateOptimizer;
+import org.apache.commons.math3.optim.MaxEval;
+import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
+import org.apache.commons.math3.optim.univariate.BrentOptimizer;
+import org.apache.commons.math3.optim.univariate.SearchInterval;
+import org.apache.commons.math3.optim.univariate.UnivariateObjectiveFunction;
 
 /**
  * Time series transformation utilities including log, root, and Box-Cox transformations.
@@ -64,25 +66,47 @@ public class Transform {
         return boxCox(data, boxCoxLambdaSearch(data));
     }
 
+    /**
+     * Inverse Box-Cox transform. Reverses boxCox(data, lambda).
+     * For lambda=0: x = exp(y). For lambda!=0: x = (y*lambda + 1)^(1/lambda).
+     */
+    public static List<Double> inverseBoxCox(List<Double> data, double lambda) {
+        if (data == null) {
+            throw new IllegalArgumentException("Data must not be null.");
+        }
+        List<Double> result = new ArrayList<>(data.size());
+        for (double y : data) {
+            if (lambda == 0) {
+                result.add(Math.exp(y));
+            } else {
+                double inner = y * lambda + 1.0;
+                if (inner <= 0) {
+                    throw new IllegalArgumentException(
+                            "Inverse Box-Cox undefined: y*lambda+1 must be > 0 for lambda != 0");
+                }
+                result.add(Math.pow(inner, 1.0 / lambda));
+            }
+        }
+        return result;
+    }
+
     public static double boxCoxLambdaSearch(List<Double> data) {
         return boxCoxLambdaSearch(data, -1, 2);
     }
 
     public static double boxCoxLambdaSearch(final List<Double> data, double lower, double upper) {
         validatePositive(data);
-
-        UnivariateOptimizer optimizer = new BrentOptimizer(1e-10, 1e-14);
+        BrentOptimizer optimizer = new BrentOptimizer(1e-10, 1e-14);
         return optimizer.optimize(
-                100,
-                new UnivariateFunction() {
+                new MaxEval(100),
+                new UnivariateObjectiveFunction(new UnivariateFunction() {
                     @Override
                     public double value(double lambda) {
                         return boxCoxNegLogLikelihood(data, lambda);
                     }
-                },
+                }),
                 GoalType.MINIMIZE,
-                lower,
-                upper
+                new SearchInterval(lower, upper)
         ).getPoint();
     }
 

@@ -244,8 +244,72 @@ public class SARIMA {
     public List<PredictionInterval> forecastIntervals(int steps, double confidenceLevel) {
         requireFitted();
         List<Double> forecast = forecast(steps);
-        boolean increasing = d > 0 || seasonalD > 0 || q > 0 || seasonalQ > 0;
-        return ForecastIntervals.normalIntervals(forecast, innovationVariance, confidenceLevel, increasing);
+        return ForecastIntervals.normalIntervals(forecast, computeStepVariances(steps), confidenceLevel);
+    }
+
+    /**
+     * Computes h-step forecast variances using the psi-weight (MA-infinity) representation.
+     * Handles arbitrary AR/MA lag sets from the combined non-seasonal and seasonal terms.
+     * Regular and seasonal differencing are integrated via cumulative summation.
+     */
+    private List<Double> computeStepVariances(int steps) {
+        // Build combined AR and MA coefficient arrays aligned with arLags/maLags
+        double[] allArCoeffs = new double[arLags.length];
+        System.arraycopy(arCoefficients, 0, allArCoeffs, 0, p);
+        System.arraycopy(seasonalArCoefficients, 0, allArCoeffs, p, seasonalP);
+
+        double[] allMaCoeffs = new double[maLags.length];
+        System.arraycopy(maCoefficients, 0, allMaCoeffs, 0, q);
+        System.arraycopy(seasonalMaCoefficients, 0, allMaCoeffs, q, seasonalQ);
+
+        int maxMaLag = 0;
+        for (int lag : maLags) {
+            maxMaLag = Math.max(maxMaLag, lag);
+        }
+        double[] maByLag = new double[maxMaLag + 1];
+        for (int i = 0; i < maLags.length; i++) {
+            maByLag[maLags[i]] = allMaCoeffs[i];
+        }
+
+        double[] psi = new double[steps];
+        if (steps > 0) {
+            psi[0] = 1.0;
+        }
+        for (int h = 1; h < steps; h++) {
+            double sum = 0.0;
+            for (int i = 0; i < arLags.length; i++) {
+                int lag = arLags[i];
+                if (h - lag >= 0) {
+                    sum += allArCoeffs[i] * psi[h - lag];
+                }
+            }
+            if (h <= maxMaLag) {
+                sum += maByLag[h];
+            }
+            psi[h] = sum;
+        }
+
+        // Regular differencing integration
+        for (int k = 0; k < d; k++) {
+            for (int h = 1; h < steps; h++) {
+                psi[h] += psi[h - 1];
+            }
+        }
+        // Seasonal differencing integration
+        for (int k = 0; k < seasonalD; k++) {
+            for (int h = seasonalPeriod; h < steps; h++) {
+                psi[h] += psi[h - seasonalPeriod];
+            }
+        }
+
+        List<Double> variances = new ArrayList<>(steps);
+        double cumPsiSq = 0.0;
+        double baseVar = Math.max(1e-12, innovationVariance);
+        for (int h = 0; h < steps; h++) {
+            cumPsiSq += psi[h] * psi[h];
+            variances.add(baseVar * cumPsiSq);
+        }
+        return variances;
     }
 
     public IntervalForecast forecastWithIntervals(int steps, double confidenceLevel) {
