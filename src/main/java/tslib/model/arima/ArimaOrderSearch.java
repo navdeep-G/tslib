@@ -5,11 +5,15 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Grid-search helpers for manual ARIMA/SARIMA order selection.
  */
 public final class ArimaOrderSearch {
+
+    private static final Logger LOGGER = Logger.getLogger(ArimaOrderSearch.class.getName());
 
     private ArimaOrderSearch() {}
 
@@ -37,7 +41,9 @@ public final class ArimaOrderSearch {
                     try {
                         ARIMA model = new ARIMA(combo[0], combo[1], combo[2]).fit(data);
                         return OrderScore.forArima(model, criterion);
-                    } catch (RuntimeException ignored) {
+                    } catch (RuntimeException e) {
+                        LOGGER.log(Level.FINE, "ARIMA({0},{1},{2}) failed: {3}",
+                                new Object[]{combo[0], combo[1], combo[2], e.getMessage()});
                         return null;
                     }
                 })
@@ -85,7 +91,9 @@ public final class ArimaOrderSearch {
                     try {
                         SARIMA model = new SARIMA(combo[0], combo[1], combo[2], combo[3], combo[4], combo[5], seasonalPeriod).fit(data);
                         return OrderScore.forSarima(model, criterion);
-                    } catch (RuntimeException ignored) {
+                    } catch (RuntimeException e) {
+                        LOGGER.log(Level.FINE, "SARIMA({0},{1},{2})({3},{4},{5})[{6}] failed: {7}",
+                                new Object[]{combo[0], combo[1], combo[2], combo[3], combo[4], combo[5], seasonalPeriod, e.getMessage()});
                         return null;
                     }
                 })
