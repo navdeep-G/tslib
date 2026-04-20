@@ -1,11 +1,11 @@
 package tslib.movingaverage;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class SimpleMovingAverageTest {
 
@@ -51,8 +51,8 @@ public class SimpleMovingAverageTest {
         assertTrue(result.isEmpty());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidPeriod() {
-        new SimpleMovingAverage(0); // Should throw exception
+        assertThrows(IllegalArgumentException.class, () -> new SimpleMovingAverage(0));
     }
 }

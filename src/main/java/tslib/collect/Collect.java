@@ -21,17 +21,17 @@ public class Collect {
     private final int _n;
     protected final List<Double> _data;
     
-    // Cached values for performance
-    private Double _cachedAverage = null;
-    private Double _cachedVariance = null;
-    private Double _cachedStandardDeviation = null;
-    private Integer _cachedMinIndex = null;
-    private Integer _cachedMaxIndex = null;
-    private Double _cachedMin = null;
-    private Double _cachedMax = null;
-    private Double _cachedADFStat = null;
-    private Boolean _cachedIsStationary = null;
-    private AugmentedDickeyFuller _adfInstance = null;
+    // Cached values for performance — volatile ensures cross-thread visibility
+    private volatile Double _cachedAverage = null;
+    private volatile Double _cachedVariance = null;
+    private volatile Double _cachedStandardDeviation = null;
+    private volatile Integer _cachedMinIndex = null;
+    private volatile Integer _cachedMaxIndex = null;
+    private volatile Double _cachedMin = null;
+    private volatile Double _cachedMax = null;
+    private volatile Double _cachedADFStat = null;
+    private volatile Boolean _cachedIsStationary = null;
+    private volatile AugmentedDickeyFuller _adfInstance = null;
 
     public Collect(String filepath, int k, int n) throws IOException {
         this._filepath = filepath;

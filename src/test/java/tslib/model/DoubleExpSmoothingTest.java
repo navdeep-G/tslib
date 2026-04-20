@@ -1,12 +1,12 @@
 package tslib.model;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import tslib.model.expsmoothing.DoubleExpSmoothing;
 
 import java.util.List;
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DoubleExpSmoothingTest {
 
@@ -34,7 +34,7 @@ public class DoubleExpSmoothingTest {
         double slope = prediction.get(y.size()) - lastSmoothed;
 
         for (int i = y.size(); i < prediction.size(); i++) {
-            assertTrue("Forecasted value should be positive", prediction.get(i) > 0);
+            assertTrue(prediction.get(i) > 0, "Forecasted value should be positive");
         }
 
         // Optional: print forecast values for manual inspection

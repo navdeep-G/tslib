@@ -2,8 +2,8 @@ package tslib.model.arima;
 
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ARIMAXEdgeCaseTest {
 
@@ -49,28 +49,28 @@ public class ARIMAXEdgeCaseTest {
         assertTrue(model.getInnovationVariance() >= 0.0);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void arimaxThrowsOnNullData() {
         double[][] x = {{1.0}, {2.0}};
-        new ARIMAX(0, 0, 0).fit(null, x);
+        assertThrows(IllegalArgumentException.class, () -> new ARIMAX(0, 0, 0).fit(null, x));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void arimaxThrowsOnMismatchedExogenousRows() {
         List<Double> y = Arrays.asList(1.0, 2.0, 3.0, 4.0, 5.0);
         double[][] x = {{1.0}, {2.0}};
-        new ARIMAX(0, 0, 0).fit(y, x);
+        assertThrows(IllegalArgumentException.class, () -> new ARIMAX(0, 0, 0).fit(y, x));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void arimaxThrowsOnNullExogenous() {
         List<Double> y = Arrays.asList(1.0, 2.0, 3.0, 4.0, 5.0);
-        new ARIMAX(0, 0, 0).fit(y, null);
+        assertThrows(IllegalArgumentException.class, () -> new ARIMAX(0, 0, 0).fit(y, null));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void arimaxThrowsOnForecastBeforeFit() {
-        new ARIMAX(0, 0, 0).forecast(new double[][]{{1.0}});
+        assertThrows(IllegalStateException.class, () -> new ARIMAX(0, 0, 0).forecast(new double[][]{{1.0}}));
     }
 
     @Test
@@ -78,12 +78,7 @@ public class ARIMAXEdgeCaseTest {
         List<Double> y = Arrays.asList(1.0, 2.0, 3.0, 4.0, 5.0, 6.0);
         double[][] x = {{1.0}, {2.0}, {3.0}, {4.0}, {5.0}, {6.0}};
         ARIMAX model = new ARIMAX(0, 0, 0).fit(y, x);
-        try {
-            model.forecast(new double[][]{{1.0, 2.0}});
-            fail("Expected IllegalArgumentException for wrong exogenous dimension");
-        } catch (IllegalArgumentException e) {
-            // expected
-        }
+        assertThrows(IllegalArgumentException.class, () -> model.forecast(new double[][]{{1.0, 2.0}}));
     }
 
     @Test

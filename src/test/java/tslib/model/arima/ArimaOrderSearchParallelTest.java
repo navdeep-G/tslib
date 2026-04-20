@@ -2,8 +2,8 @@ package tslib.model.arima;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ArimaOrderSearchParallelTest {
 
@@ -82,17 +82,18 @@ public class ArimaOrderSearchParallelTest {
         assertEquals(1, result.getQ());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void searchThrowsWhenNothingFits() {
-        // Grid (0,0,0) is skipped; grid of just (0,0,0) should throw
-        ArimaOrderSearch.searchBestArima(
-                trendData(20), 0, 0, 0, ArimaOrderSearch.Criterion.AIC);
+        assertThrows(IllegalArgumentException.class, () ->
+                ArimaOrderSearch.searchBestArima(
+                        trendData(20), 0, 0, 0, ArimaOrderSearch.Criterion.AIC));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void searchThrowsOnNegativeBounds() {
-        ArimaOrderSearch.searchBestArima(
-                trendData(20), -1, 0, 0, ArimaOrderSearch.Criterion.AIC);
+        assertThrows(IllegalArgumentException.class, () ->
+                ArimaOrderSearch.searchBestArima(
+                        trendData(20), -1, 0, 0, ArimaOrderSearch.Criterion.AIC));
     }
 
     private static double rss(List<Double> residuals) {

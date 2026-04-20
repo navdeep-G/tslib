@@ -24,7 +24,8 @@ repositories {
 dependencies {
     api 'org.apache.commons:commons-math3:3.6.1'
 
-    testImplementation 'junit:junit:4.13.2'
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
 }
 
 java {
@@ -40,7 +41,7 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 tasks.withType(Test).configureEach {
-    useJUnit()
+    useJUnitPlatform()
     testLogging {
         events 'passed', 'skipped', 'failed'
         exceptionFormat 'full'

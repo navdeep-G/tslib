@@ -4,13 +4,13 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import tslib.dataquality.MissingValueImputer;
 import tslib.model.ARIMA;
 import tslib.model.LocalLevelModel;
 import tslib.model.TripleExpSmoothing;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ReleaseCandidateWorkflowTest {
 

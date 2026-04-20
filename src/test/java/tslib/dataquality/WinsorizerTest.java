@@ -2,8 +2,8 @@ package tslib.dataquality;
 
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class WinsorizerTest {
 
@@ -49,19 +49,19 @@ public class WinsorizerTest {
         assertEquals(data.size(), result.size());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void winsorizeThrowsOnInvalidProbabilities() {
-        Winsorizer.winsorize(Arrays.asList(1.0, 2.0, 3.0), 0.8, 0.2);
+        assertThrows(IllegalArgumentException.class, () -> Winsorizer.winsorize(Arrays.asList(1.0, 2.0, 3.0), 0.8, 0.2));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void winsorizeThrowsWhenLowerEqualsUpper() {
-        Winsorizer.winsorize(Arrays.asList(1.0, 2.0, 3.0), 0.5, 0.5);
+        assertThrows(IllegalArgumentException.class, () -> Winsorizer.winsorize(Arrays.asList(1.0, 2.0, 3.0), 0.5, 0.5));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void winsorizeThrowsOnNegativeLower() {
-        Winsorizer.winsorize(Arrays.asList(1.0, 2.0, 3.0), -0.1, 0.9);
+        assertThrows(IllegalArgumentException.class, () -> Winsorizer.winsorize(Arrays.asList(1.0, 2.0, 3.0), -0.1, 0.9));
     }
 
     @Test

@@ -2,8 +2,8 @@ package tslib.util;
 
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class StatsOptimizationTest {
 
@@ -76,14 +76,14 @@ public class StatsOptimizationTest {
         assertEquals(-10.0, Stats.getMinimum(data), 1e-15);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void getMinimumIndexThrowsOnEmpty() {
-        Stats.getMinimumIndex(Arrays.asList());
+        assertThrows(IllegalArgumentException.class, () -> Stats.getMinimumIndex(Arrays.asList()));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void getMaximumIndexThrowsOnEmpty() {
-        Stats.getMaximumIndex(Arrays.asList());
+        assertThrows(IllegalArgumentException.class, () -> Stats.getMaximumIndex(Arrays.asList()));
     }
 
     @Test
