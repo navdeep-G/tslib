@@ -1,8 +1,8 @@
 package tslib.movingaverage;
 
 import java.util.List;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MovingAverageRegressionTest {
     @Test

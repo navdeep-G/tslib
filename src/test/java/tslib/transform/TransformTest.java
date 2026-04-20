@@ -2,8 +2,8 @@ package tslib.transform;
 
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TransformTest {
     @Test
@@ -17,9 +17,9 @@ public class TransformTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void logRejectsNonPositiveValues() {
-        Transform.log(List.of(1.0, 0.0, 2.0));
+        assertThrows(IllegalArgumentException.class, () -> Transform.log(List.of(1.0, 0.0, 2.0)));
     }
 
     @Test
@@ -54,9 +54,9 @@ public class TransformTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void inverseBoxCoxThrowsWhenInnerNonPositive() {
-        // lambda=2, y=-1: y*lambda+1 = -1*2+1 = -1 <= 0
-        Transform.inverseBoxCox(Arrays.asList(-1.0), 2.0);
+        assertThrows(IllegalArgumentException.class, () ->
+                Transform.inverseBoxCox(Arrays.asList(-1.0), 2.0));
     }
 }

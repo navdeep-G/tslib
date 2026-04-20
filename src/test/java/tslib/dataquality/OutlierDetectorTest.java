@@ -2,8 +2,8 @@ package tslib.dataquality;
 
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class OutlierDetectorTest {
 
@@ -29,9 +29,9 @@ public class OutlierDetectorTest {
         assertTrue(outliers.contains(4));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void zScoreThrowsOnNonPositiveThreshold() {
-        OutlierDetector.zScore(Arrays.asList(1.0, 2.0, 3.0), 0.0);
+        assertThrows(IllegalArgumentException.class, () -> OutlierDetector.zScore(Arrays.asList(1.0, 2.0, 3.0), 0.0));
     }
 
     @Test
@@ -48,9 +48,9 @@ public class OutlierDetectorTest {
         assertTrue(outliers.isEmpty());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void iqrThrowsOnNonPositiveMultiplier() {
-        OutlierDetector.iqr(Arrays.asList(1.0, 2.0, 3.0), 0.0);
+        assertThrows(IllegalArgumentException.class, () -> OutlierDetector.iqr(Arrays.asList(1.0, 2.0, 3.0), 0.0));
     }
 
     @Test

@@ -2,8 +2,8 @@ package tslib.transform;
 
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class BoxCoxOptimizationTest {
 
@@ -43,7 +43,7 @@ public class BoxCoxOptimizationTest {
             data.add(Math.exp(i * 0.5));
         }
         double lambda = Transform.boxCoxLambdaSearch(data);
-        assertTrue("Expected lambda near 0 for exponential data, got " + lambda, lambda < 0.3);
+        assertTrue(lambda < 0.3, "Expected lambda near 0 for exponential data, got " + lambda);
     }
 
     @Test
@@ -60,9 +60,10 @@ public class BoxCoxOptimizationTest {
         assertTrue(lambda >= 0.0 && lambda <= 1.0);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void boxCoxThrowsOnNonPositiveValues() {
-        Transform.boxCox(Arrays.asList(1.0, -1.0, 3.0));
+        assertThrows(IllegalArgumentException.class, () ->
+                Transform.boxCox(Arrays.asList(1.0, -1.0, 3.0)));
     }
 
     @Test

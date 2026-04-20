@@ -2,8 +2,8 @@ package tslib.tstest;
 
 import java.util.ArrayList;
 import tslib.tests.*;
-import static org.junit.Assert.*;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit Test for Augmented Dickey Fuller
@@ -19,7 +19,7 @@ public class AugmentedDickeyFullerTest {
         }
         AugmentedDickeyFuller adf = new AugmentedDickeyFuller(x);
         System.out.println("ADF stat (linear trend): " + adf.getAdfStat());
-        assertFalse("Expected non-stationary series", adf.isNeedsDiff());
+        assertFalse(adf.isNeedsDiff(), "Expected non-stationary series");
     }
 
     @Test
@@ -31,7 +31,7 @@ public class AugmentedDickeyFullerTest {
         x.set(50, 1000.0);  // Inject an outlier
         AugmentedDickeyFuller adf = new AugmentedDickeyFuller(x);
         System.out.println("ADF stat (trend + outlier): " + adf.getAdfStat());
-        assertFalse("Expected non-stationary series with outlier", adf.isNeedsDiff());
+        assertFalse(adf.isNeedsDiff(), "Expected non-stationary series with outlier");
     }
 
     @Test
@@ -42,7 +42,7 @@ public class AugmentedDickeyFullerTest {
         }
         AugmentedDickeyFuller adf = new AugmentedDickeyFuller(x);
         double pValue = adf.getPValue();
-        assertTrue("p-value must be in [0.01, 0.10]", pValue >= 0.01 && pValue <= 0.10);
+        assertTrue(pValue >= 0.01 && pValue <= 0.10, "p-value must be in [0.01, 0.10]");
     }
 
     @Test
@@ -55,8 +55,7 @@ public class AugmentedDickeyFullerTest {
         }
         AugmentedDickeyFuller adf = new AugmentedDickeyFuller(x);
         // White noise is stationary; ADF stat should be very negative
-        assertTrue("Stationary series should have ADF stat < -3.0", adf.getAdfStat() < -3.0);
-        assertEquals("p-value should be at lower boundary (0.01) for stationary white noise",
-                0.01, adf.getPValue(), 1e-9);
+        assertTrue(adf.getAdfStat() < -3.0, "Stationary series should have ADF stat < -3.0");
+        assertEquals(0.01, adf.getPValue(), 1e-9, "p-value should be at lower boundary (0.01) for stationary white noise");
     }
 }

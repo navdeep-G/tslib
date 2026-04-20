@@ -1,12 +1,12 @@
 package tslib.model;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import tslib.model.expsmoothing.TripleExpSmoothing;
 
 import java.util.List;
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TripleExpSmoothingTest {
 
@@ -32,7 +32,7 @@ public class TripleExpSmoothingTest {
 
         // Verify forecast values are positive and not just zero padding
         for (int i = y.size(); i < forecast.size(); i++) {
-            assertTrue("Forecasted value should be greater than zero", forecast.get(i) > 0.0);
+            assertTrue(forecast.get(i) > 0.0, "Forecasted value should be greater than zero");
         }
 
         // Optionally print for manual inspection

@@ -1,6 +1,6 @@
 package tslib.collect;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import tslib.model.expsmoothing.SingleExpSmoothing;
 import tslib.model.expsmoothing.TripleExpSmoothing;
 import tslib.movingaverage.*;
@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CollectTest {
 
@@ -94,7 +94,7 @@ public class CollectTest {
             long duration = (endTime - startTime) / 1_000_000; // Convert to milliseconds
             
             // Performance assertion - should complete within reasonable time
-            assertTrue("Performance test failed: took " + duration + " ms", duration < 1000);
+            assertTrue(duration < 1000, "Performance test failed: took " + duration + " ms");
             
             // Test 2: Rolling average performance
             startTime = System.nanoTime();
@@ -105,7 +105,7 @@ public class CollectTest {
             duration = (endTime - startTime) / 1_000_000;
             
             assertNotNull(rollingAvg);
-            assertTrue("Rolling average performance test failed: took " + duration + " ms", duration < 500);
+            assertTrue(duration < 500, "Rolling average performance test failed: took " + duration + " ms");
             
             // Test 3: Stationarity tests (expensive operations)
             startTime = System.nanoTime();
@@ -116,7 +116,7 @@ public class CollectTest {
             endTime = System.nanoTime();
             duration = (endTime - startTime) / 1_000_000;
             
-            assertTrue("ADF test performance failed: took " + duration + " ms", duration < 2000);
+            assertTrue(duration < 2000, "ADF test performance failed: took " + duration + " ms");
             
             // Test 4: Second call to ADF (should be cached)
             startTime = System.nanoTime();
@@ -128,7 +128,7 @@ public class CollectTest {
             duration = (endTime - startTime) / 1_000_000;
             
             // Cached calls should be much faster
-            assertTrue("Cached ADF test should be faster: took " + duration + " ms", duration < 100);
+            assertTrue(duration < 100, "Cached ADF test should be faster: took " + duration + " ms");
             
             // Verify cached results are consistent
             assertEquals(adfStat, adfStat2, 1e-10);
@@ -144,7 +144,7 @@ public class CollectTest {
             
             assertNotNull(summary);
             assertFalse(summary.isEmpty());
-            assertTrue("Summary generation performance failed: took " + duration + " ms", duration < 100);
+            assertTrue(duration < 100, "Summary generation performance failed: took " + duration + " ms");
             
         } finally {
             // Clean up temporary file
@@ -174,7 +174,7 @@ public class CollectTest {
             assertEquals(firstAverage, secondAverage, 1e-10);
             
             // Verify second call is faster (cached)
-            assertTrue("Cached call should be faster", secondCallTime < firstCallTime);
+            assertTrue(secondCallTime < firstCallTime, "Cached call should be faster");
             
             // Test variance caching
             startTime = System.nanoTime();
@@ -186,7 +186,7 @@ public class CollectTest {
             secondCallTime = System.nanoTime() - startTime;
             
             assertEquals(firstVariance, secondVariance, 1e-10);
-            assertTrue("Cached variance call should be faster", secondCallTime < firstCallTime);
+            assertTrue(secondCallTime < firstCallTime, "Cached variance call should be faster");
             
         } finally {
             new java.io.File(tempFile).delete();

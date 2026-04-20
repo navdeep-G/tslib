@@ -1,8 +1,8 @@
 package tslib.movingaverage;
 
-import org.junit.Test;
-import org.junit.Before;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -18,7 +18,7 @@ public class WeightedMovingAverageTest {
 
     private WeightedMovingAverage wma;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         wma = new WeightedMovingAverage(5);
     }
@@ -31,19 +31,19 @@ public class WeightedMovingAverageTest {
         assertNotNull(wma10);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testConstructorWithInvalidPeriodZero() {
-        new WeightedMovingAverage(0);
+        assertThrows(IllegalArgumentException.class, () -> new WeightedMovingAverage(0));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testConstructorWithInvalidPeriodNegative() {
-        new WeightedMovingAverage(-1);
+        assertThrows(IllegalArgumentException.class, () -> new WeightedMovingAverage(-1));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testConstructorWithInvalidPeriodNegativeFive() {
-        new WeightedMovingAverage(-5);
+        assertThrows(IllegalArgumentException.class, () -> new WeightedMovingAverage(-5));
     }
 
     @Test

@@ -1,10 +1,10 @@
 package tslib.evaluation;
 
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import tslib.model.ARIMA;
 import tslib.model.LocalLevelModel;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class PredictionIntervalSupportTest {
     @Test

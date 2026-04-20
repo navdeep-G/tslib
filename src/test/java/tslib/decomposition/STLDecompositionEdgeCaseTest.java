@@ -2,8 +2,8 @@ package tslib.decomposition;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class STLDecompositionEdgeCaseTest {
 
@@ -50,7 +50,7 @@ public class STLDecompositionEdgeCaseTest {
         STLDecomposition.Result result = stl.decompose(data);
         double earlyTrend = result.getTrend().subList(0, 4).stream().mapToDouble(Double::doubleValue).average().orElse(0);
         double lateTrend = result.getTrend().subList(20, 24).stream().mapToDouble(Double::doubleValue).average().orElse(0);
-        assertTrue("Late trend should be higher than early trend", lateTrend > earlyTrend);
+        assertTrue(lateTrend > earlyTrend, "Late trend should be higher than early trend");
     }
 
     @Test
@@ -74,26 +74,26 @@ public class STLDecompositionEdgeCaseTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void throwsOnPeriodLessThanTwo() {
-        new STLDecomposition(1);
+        assertThrows(IllegalArgumentException.class, () -> new STLDecomposition(1));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void throwsOnTooShortSeries() {
         List<Double> data = new ArrayList<>();
         for (int i = 0; i < 5; i++) data.add((double) i);
-        new STLDecomposition(4).decompose(data);
+        assertThrows(IllegalArgumentException.class, () -> new STLDecomposition(4).decompose(data));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void throwsOnEvenTrendWindow() {
-        new STLDecomposition(4, 6, 7, 2);
+        assertThrows(IllegalArgumentException.class, () -> new STLDecomposition(4, 6, 7, 2));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void throwsOnEvenSeasonalWindow() {
-        new STLDecomposition(4, 7, 6, 2);
+        assertThrows(IllegalArgumentException.class, () -> new STLDecomposition(4, 7, 6, 2));
     }
 
     @Test
@@ -101,11 +101,6 @@ public class STLDecompositionEdgeCaseTest {
         List<Double> data = pureSeasonalData(3, 4);
         STLDecomposition stl = new STLDecomposition(4);
         STLDecomposition.Result result = stl.decompose(data);
-        try {
-            result.getTrend().set(0, 999.0);
-            fail("Expected UnsupportedOperationException for immutable list");
-        } catch (UnsupportedOperationException e) {
-            // expected
-        }
+        assertThrows(UnsupportedOperationException.class, () -> result.getTrend().set(0, 999.0));
     }
 }

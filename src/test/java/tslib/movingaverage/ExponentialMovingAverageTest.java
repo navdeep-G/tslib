@@ -1,11 +1,11 @@
 package tslib.movingaverage;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ExponentialMovingAverageTest {
 
@@ -26,7 +26,7 @@ public class ExponentialMovingAverageTest {
             double prev = output.get(i - 1);
             double curr = output.get(i);
             double actual = input.get(i);
-            assertTrue("EMA should move toward input", (curr > prev && curr < actual) || (curr < prev && curr > actual));
+            assertTrue((curr > prev && curr < actual) || (curr < prev && curr > actual), "EMA should move toward input");
         }
     }
 
@@ -45,13 +45,13 @@ public class ExponentialMovingAverageTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidAlphaZero() {
-        new ExponentialMovingAverage(0.0);
+        assertThrows(IllegalArgumentException.class, () -> new ExponentialMovingAverage(0.0));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidAlphaGreaterThanOne() {
-        new ExponentialMovingAverage(1.1);
+        assertThrows(IllegalArgumentException.class, () -> new ExponentialMovingAverage(1.1));
     }
 }
