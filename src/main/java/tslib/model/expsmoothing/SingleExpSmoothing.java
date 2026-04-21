@@ -1,12 +1,15 @@
 package tslib.model.expsmoothing;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Single Exponential Smoothing implementation.
  */
-public class SingleExpSmoothing implements ExponentialSmoothing {
+public class SingleExpSmoothing implements ExponentialSmoothing, Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private final double alpha;
 

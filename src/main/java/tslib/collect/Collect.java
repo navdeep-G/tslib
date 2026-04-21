@@ -41,9 +41,42 @@ public class Collect {
     }
 
     /**
-     * Private file reader method
+     * In-memory constructor: wraps an existing {@code List<Double>} without file I/O.
+     */
+    public Collect(List<Double> data, int k, int n) {
+        if (data == null || data.isEmpty()) {
+            throw new IllegalArgumentException("Data must not be null or empty.");
+        }
+        this._filepath = null;
+        this._k = k;
+        this._n = n;
+        this._data = new ArrayList<>(data);
+    }
+
+    /**
+     * In-memory constructor: wraps a primitive {@code double[]} without file I/O.
+     */
+    public Collect(double[] data, int k, int n) {
+        if (data == null || data.length == 0) {
+            throw new IllegalArgumentException("Data must not be null or empty.");
+        }
+        this._filepath = null;
+        this._k = k;
+        this._n = n;
+        List<Double> list = new ArrayList<>(data.length);
+        for (double v : data) {
+            list.add(v);
+        }
+        this._data = list;
+    }
+
+    /**
+     * Reads the source file. Returns the in-memory data directly when no filepath was given.
      */
     public List<Double> readFile() throws IOException {
+        if (_filepath == null) {
+            return new ArrayList<>(_data);
+        }
         return Util.readFile(_filepath);
     }
 

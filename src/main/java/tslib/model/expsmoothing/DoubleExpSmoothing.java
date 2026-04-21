@@ -1,12 +1,15 @@
 package tslib.model.expsmoothing;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Double Exponential Smoothing (Holt's Linear Trend Method).
  */
-public class DoubleExpSmoothing implements ExponentialSmoothing {
+public class DoubleExpSmoothing implements ExponentialSmoothing, Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private final double alpha;
     private final double gamma;
