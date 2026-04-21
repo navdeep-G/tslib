@@ -1,13 +1,13 @@
 Output docs/demo.gif
 
 # ── Terminal appearance ───────────────────────────────────────────────────────
-Set Width     1100
-Set Height     660
-Set FontSize    13
-Set FontFamily "JetBrains Mono"
-Set Theme      "Dracula"
-Set Padding     24
-Set Framerate   22
+Set Width      1200
+Set Height      740
+Set FontSize     14
+Set FontFamily  "JetBrains Mono"
+Set Theme       "Dracula"
+Set Padding      40
+Set Framerate    24
 
 # ── Shell prompt ─────────────────────────────────────────────────────────────
 Env PS1 "$ "

@@ -70,8 +70,8 @@ gap 4.5
 
 # ── 03 ────────────────────────────────────────────────────────────────────────
 clear
-hdr "03 · Data Quality   (MissingValueImputer · OutlierDetector · Winsorizer)"
-lbl "Input (nulls at idx 2, 3, 6)" "[1, 2, null, null, 5, 6, null, 8, 9, 10]"
+hdr "03 · Data Quality   (Imputer · OutlierDetector · Winsorizer)"
+lbl "Input (nulls at idx 2, 3, 6)" "[1, 2, null, null, 5, 6, null, ...]"
 echo
 kv  "FORWARD_FILL"          "[1, 2, 2, 2, 5, 6, 6, 8, 9, 10]"
 kv  "BACKWARD_FILL"         "[1, 2, 5, 5, 5, 6, 8, 8, 9, 10]"
@@ -80,20 +80,20 @@ kv  "MEAN"                  "[1, 2, 5.86, 5.86, 5, 6, 5.86, 8, 9, 10]"
 echo
 lbl "OutlierDetector.zScore(data, threshold=2.5)"   "→ indices [5, 11]"
 lbl "OutlierDetector.iqr(data, multiplier=1.5)"     "→ indices [5, 11]"
-lbl "Winsorizer.winsorize(data, 5%, 95%)"           "→ 200 clipped to 19.03 / −100 to −4.05"
+lbl "Winsorizer.winsorize(data, 5%, 95%)"           "→ 200→19.03 / −100→−4.05"
 gap 5
 
 # ── 04 ────────────────────────────────────────────────────────────────────────
 clear
 hdr "04 · Transformations   (Transform · Differencing)"
-lbl "Transform.log(x)"           "[0.0, 1.386, 2.197, 2.773, 3.219, 3.584, ...]"
-lbl "Transform.sqrt(x)"          "[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, ...]"
-lbl "Transform.boxCox(x)"        "auto λ=−1.0 → [0.0, 0.75, 0.889, 0.938, ...]"
-lbl "Transform.inverseBoxCox(·)" "[1.0, 4.0, 9.0, 16.0, 25.0, ...]  ✓ roundtrip"
+lbl "Transform.log(x)"           "[0.0, 1.386, 2.197, 2.773, ...]"
+lbl "Transform.sqrt(x)"          "[1.0, 2.0, 3.0, 4.0, 5.0, ...]"
+lbl "Transform.boxCox(x)"        "auto λ=−1.0 → [0.0, 0.75, ...]"
+lbl "Transform.inverseBoxCox(·)" "[1.0, 4.0, 9.0, ...]  ✓ roundtrip"
 echo
-lbl "Differencing.difference(s)"      "[3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0]"
-lbl "Differencing.difference(s, d=2)" "[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]"
-lbl "Differencing.seasonalDiff(s, 4)" "[4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, ...]"
+lbl "Differencing.difference(s)"      "[3.0, 4.0, 5.0, 6.0, 7.0, ...]"
+lbl "Differencing.difference(s, d=2)" "[1.0, 1.0, 1.0, 1.0, 1.0, ...]"
+lbl "Differencing.seasonalDiff(s, 4)" "[4.0, 4.0, 4.0, 4.0, 4.0, ...]"
 lbl "Differencing.inverseDifference"  "→ fully recovers original scale"
 gap 4.5
 
@@ -165,7 +165,7 @@ kv  "Smoothed tail"     "[39.72, 40.28, 40.49, 41.18, 40.98]"
 kv  "Forecast (h=3)"    "[40.977, 40.977, 40.977]"
 echo
 printf "  ${D}95%% intervals via forecastWithIntervals(6, 0.95):${R}\n"
-out "   h=1  [36.948, 45.005]    h=2  [36.509, 45.444]    h=3  [36.109, 45.844]"
+out "   h=1 [36.948, 45.005]  h=2 [36.509, 45.444]  h=3 [36.109, 45.844]"
 gap 5.5
 
 # ── 09 ────────────────────────────────────────────────────────────────────────
@@ -208,11 +208,11 @@ kv  "Forecast (h=5)"  "[1.345, 1.214, 1.118, 1.047, 0.995]"
 echo
 lbl "AutoArima(···, maxP_s=1, maxD_s=1, maxQ_s=1, period=12, AIC)" ""
 kv  "Best seasonal"   "SARIMA(1,1,1)(1,1,0)₁₂   AIC = 57.32"
-kv  "Forecast (h=12)" "[241, 245, 251, 253, 255, 256, 253, 254, 254, 256, 258, 261]"
+kv  "Forecast (h=12)" "[241, 245, 251, 253, 255, 256, ...]"
 echo
 lbl "AutoETS(seasonalPeriod=12).fit(series)" ""
 kv  "Best model"   "TRIPLE  (Holt-Winters multiplicative)"
-kv  "Forecast"     "[109, 120, 123, 131, 130, 124, 114, 104, 100, 95, 96, 105]"
+kv  "Forecast"     "[109, 120, 123, 131, 130, 124, ...]"
 gap 5.5
 
 # ── 12 ────────────────────────────────────────────────────────────────────────
