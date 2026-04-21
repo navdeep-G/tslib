@@ -1,5 +1,3 @@
-package tslib.examples;
-
 import tslib.collect.Collect;
 import tslib.util.Stats;
 

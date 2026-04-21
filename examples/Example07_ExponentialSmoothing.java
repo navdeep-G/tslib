@@ -1,5 +1,3 @@
-package tslib.examples;
-
 import tslib.model.DoubleExpSmoothing;
 import tslib.model.SingleExpSmoothing;
 import tslib.model.TripleExpSmoothing;

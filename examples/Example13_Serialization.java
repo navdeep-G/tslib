@@ -1,5 +1,3 @@
-package tslib.examples;
-
 import tslib.model.ARIMA;
 import tslib.model.LocalLevelModel;
 import tslib.util.ModelSerializer;

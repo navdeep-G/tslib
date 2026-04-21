@@ -1,5 +1,3 @@
-package tslib.examples;
-
 import tslib.movingaverage.CumulativeMovingAverage;
 import tslib.movingaverage.ExponentialMovingAverage;
 import tslib.movingaverage.SimpleMovingAverage;

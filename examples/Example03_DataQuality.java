@@ -1,5 +1,3 @@
-package tslib.examples;
-
 import tslib.dataquality.MissingValueImputer;
 import tslib.dataquality.OutlierDetector;
 import tslib.dataquality.Winsorizer;

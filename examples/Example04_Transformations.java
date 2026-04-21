@@ -1,5 +1,3 @@
-package tslib.examples;
-
 import tslib.transform.Differencing;
 import tslib.transform.Transform;
 

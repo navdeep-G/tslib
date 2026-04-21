@@ -1,5 +1,3 @@
-package tslib.examples;
-
 import tslib.model.arima.ArimaOrderSearch;
 import tslib.selection.AutoArima;
 import tslib.selection.AutoETS;

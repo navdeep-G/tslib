@@ -1,5 +1,3 @@
-package tslib.examples;
-
 import tslib.diagnostics.LjungBoxTest;
 import tslib.evaluation.BacktestResult;
 import tslib.evaluation.BenchmarkMarkdown;

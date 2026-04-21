@@ -1,5 +1,3 @@
-package tslib.examples;
-
 import tslib.model.arima.VARModel;
 
 import java.util.ArrayList;

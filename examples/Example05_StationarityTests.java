@@ -1,5 +1,3 @@
-package tslib.examples;
-
 import tslib.tests.AugmentedDickeyFuller;
 import tslib.tests.KPSSTest;
 

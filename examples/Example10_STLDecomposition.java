@@ -1,5 +1,3 @@
-package tslib.examples;
-
 import tslib.decomposition.STLDecomposition;
 
 import java.util.ArrayList;

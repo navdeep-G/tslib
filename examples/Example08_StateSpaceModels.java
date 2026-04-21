@@ -1,5 +1,3 @@
-package tslib.examples;
-
 import tslib.evaluation.IntervalForecast;
 import tslib.evaluation.PredictionInterval;
 import tslib.model.LocalLevelModel;

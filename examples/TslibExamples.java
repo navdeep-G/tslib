@@ -1,5 +1,3 @@
-package tslib.examples;
-
 /**
  * Main runner for all tslib usage examples.
  *
