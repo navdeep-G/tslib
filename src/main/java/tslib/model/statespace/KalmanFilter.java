@@ -1,5 +1,6 @@
 package tslib.model.statespace;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -7,7 +8,9 @@ import java.util.List;
 /**
  * One-dimensional Kalman filter for the local-level state-space model.
  */
-public class KalmanFilter {
+public class KalmanFilter implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private final double processVariance;
     private final double observationVariance;
@@ -100,7 +103,10 @@ public class KalmanFilter {
         }
     }
 
-    public static final class Result {
+    public static final class Result implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
         private final List<Double> predictedStates;
         private final List<Double> filteredStates;
         private final List<Double> filteredCovariances;

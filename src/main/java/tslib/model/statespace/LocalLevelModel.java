@@ -1,17 +1,35 @@
 package tslib.model.statespace;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.optim.MaxEval;
+import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
+import org.apache.commons.math3.optim.univariate.BrentOptimizer;
+import org.apache.commons.math3.optim.univariate.SearchInterval;
+import org.apache.commons.math3.optim.univariate.UnivariateObjectiveFunction;
 import tslib.evaluation.ForecastIntervals;
 import tslib.evaluation.IntervalForecast;
 import tslib.evaluation.PredictionInterval;
 
 /**
- * Local-level state-space model with simple variance search.
+ * Local-level state-space model with MLE optimization via Brent search.
+ *
+ * <p>The observation variance is estimated from the first-difference variance of the
+ * series. The process variance is found by maximising the Kalman-filter log-likelihood
+ * over a log-transformed ratio search interval, using the Brent algorithm (exact MLE
+ * rather than a 7-point grid).
  */
-public class LocalLevelModel {
+public class LocalLevelModel implements Serializable {
 
-    private static final double[] PROCESS_RATIO_GRID = {0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0};
+    private static final long serialVersionUID = 1L;
+
+    /** Log-scale lower bound for the q/r ratio search: log(1e-4). */
+    private static final double LOG_MIN_RATIO = Math.log(1e-4);
+    /** Log-scale upper bound for the q/r ratio search: log(1e4). */
+    private static final double LOG_MAX_RATIO = Math.log(1e4);
+    private static final int MAX_BRENT_EVALS = 200;
 
     private KalmanFilter filter;
     private KalmanFilter.Result result;
@@ -25,31 +43,29 @@ public class LocalLevelModel {
         }
         this.data = new ArrayList<>(observations);
 
-        double baseScale = estimateDifferenceVariance(observations);
-        double bestScore = Double.NEGATIVE_INFINITY;
-        KalmanFilter bestFilter = null;
-        KalmanFilter.Result bestResult = null;
-        double bestQ = 0.0;
-        double bestR = 0.0;
+        final double baseScale = estimateDifferenceVariance(observations);
+        final double r = Math.max(1e-6, baseScale);
+        final List<Double> obs = this.data;
 
-        for (double ratio : PROCESS_RATIO_GRID) {
-            double q = Math.max(1e-6, baseScale * ratio);
-            double r = Math.max(1e-6, baseScale);
-            KalmanFilter candidate = new KalmanFilter(q, r);
-            KalmanFilter.Result candidateResult = candidate.filter(observations);
-            if (candidateResult.getLogLikelihood() > bestScore) {
-                bestScore = candidateResult.getLogLikelihood();
-                bestFilter = candidate;
-                bestResult = candidateResult;
-                bestQ = q;
-                bestR = r;
-            }
-        }
+        BrentOptimizer optimizer = new BrentOptimizer(1e-8, 1e-10);
+        double bestLogRatio = optimizer.optimize(
+                new MaxEval(MAX_BRENT_EVALS),
+                new UnivariateObjectiveFunction(new UnivariateFunction() {
+                    @Override
+                    public double value(double logRatio) {
+                        double q = Math.max(1e-6, baseScale * Math.exp(logRatio));
+                        return -new KalmanFilter(q, r).filter(obs).getLogLikelihood();
+                    }
+                }),
+                GoalType.MINIMIZE,
+                new SearchInterval(LOG_MIN_RATIO, LOG_MAX_RATIO)
+        ).getPoint();
 
-        this.filter = bestFilter;
-        this.result = bestResult;
+        double bestQ = Math.max(1e-6, baseScale * Math.exp(bestLogRatio));
+        this.filter = new KalmanFilter(bestQ, r);
+        this.result = this.filter.filter(observations);
         this.processVariance = bestQ;
-        this.observationVariance = bestR;
+        this.observationVariance = r;
         return this;
     }
 

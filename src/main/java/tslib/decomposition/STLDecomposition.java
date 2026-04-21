@@ -1,24 +1,39 @@
 package tslib.decomposition;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 /**
- * A compact STL-style decomposition with loess smoothing for trend extraction.
+ * STL-style decomposition with loess smoothing and optional robustness re-weighting.
+ *
+ * <p>When {@code outerIterations > 0} the algorithm applies Cleveland et al. (1990)
+ * robustness re-weighting: after each outer pass the remainder is used to compute
+ * bisquare robustness weights that down-weight outliers in the next pass, making the
+ * decomposition less sensitive to anomalous observations.
  */
 public class STLDecomposition {
+
+    /** Multiplier for the robust bandwidth: h = BISQUARE_H_FACTOR * median(|remainder|). */
+    private static final double BISQUARE_H_FACTOR = 6.0;
+    private static final double BISQUARE_GUARD = 1e-10;
 
     private final int period;
     private final int trendWindow;
     private final int seasonalWindow;
     private final int iterations;
+    private final int outerIterations;
 
     public STLDecomposition(int period) {
-        this(period, Math.max(7, toOdd(period + 1)), 7, 2);
+        this(period, Math.max(7, toOdd(period + 1)), 7, 2, 0);
     }
 
     public STLDecomposition(int period, int trendWindow, int seasonalWindow, int iterations) {
+        this(period, trendWindow, seasonalWindow, iterations, 0);
+    }
+
+    public STLDecomposition(int period, int trendWindow, int seasonalWindow, int iterations, int outerIterations) {
         if (period < 2) {
             throw new IllegalArgumentException("Period must be >= 2");
         }
@@ -31,10 +46,14 @@ public class STLDecomposition {
         if (iterations < 1) {
             throw new IllegalArgumentException("Iterations must be >= 1");
         }
+        if (outerIterations < 0) {
+            throw new IllegalArgumentException("Outer iterations must be >= 0");
+        }
         this.period = period;
         this.trendWindow = trendWindow;
         this.seasonalWindow = seasonalWindow;
         this.iterations = iterations;
+        this.outerIterations = outerIterations;
     }
 
     public Result decompose(List<Double> data) {
@@ -43,22 +62,33 @@ public class STLDecomposition {
         double[] values = toArray(data);
         double[] trend = centeredMovingAverage(values, Math.max(period, trendWindow));
         double[] seasonal = new double[n];
-        double[] remainder = new double[n];
 
-        for (int iteration = 0; iteration < iterations; iteration++) {
-            double[] detrended = new double[n];
-            for (int i = 0; i < n; i++) {
-                detrended[i] = values[i] - trend[i];
+        double[] robustnessWeights = null; // null = unit weights (no robustness)
+
+        for (int outer = 0; outer <= outerIterations; outer++) {
+            for (int iteration = 0; iteration < iterations; iteration++) {
+                double[] detrended = new double[n];
+                for (int i = 0; i < n; i++) {
+                    detrended[i] = values[i] - trend[i];
+                }
+                seasonal = estimateSeasonal(detrended, period, seasonalWindow, robustnessWeights);
+                double[] deseasonalized = new double[n];
+                for (int i = 0; i < n; i++) {
+                    deseasonalized[i] = values[i] - seasonal[i];
+                }
+                trend = loessSmooth(deseasonalized, trendWindow, robustnessWeights);
             }
 
-            seasonal = estimateSeasonal(detrended, period, seasonalWindow);
-            double[] deseasonalized = new double[n];
-            for (int i = 0; i < n; i++) {
-                deseasonalized[i] = values[i] - seasonal[i];
+            if (outer < outerIterations) {
+                double[] remainder = new double[n];
+                for (int i = 0; i < n; i++) {
+                    remainder[i] = values[i] - trend[i] - seasonal[i];
+                }
+                robustnessWeights = computeRobustnessWeights(remainder);
             }
-            trend = loessSmooth(deseasonalized, trendWindow);
         }
 
+        double[] remainder = new double[n];
         for (int i = 0; i < n; i++) {
             remainder[i] = values[i] - trend[i] - seasonal[i];
         }
@@ -66,7 +96,38 @@ public class STLDecomposition {
         return new Result(toList(trend), toList(seasonal), toList(remainder));
     }
 
-    private double[] estimateSeasonal(double[] detrended, int period, int window) {
+    private double[] computeRobustnessWeights(double[] remainder) {
+        double[] absRemainder = new double[remainder.length];
+        for (int i = 0; i < remainder.length; i++) {
+            absRemainder[i] = Math.abs(remainder[i]);
+        }
+        double median = computeMedian(absRemainder);
+        double h = BISQUARE_H_FACTOR * median + BISQUARE_GUARD;
+
+        double[] weights = new double[remainder.length];
+        for (int i = 0; i < remainder.length; i++) {
+            double u = absRemainder[i] / h;
+            if (u < 1.0) {
+                double base = 1.0 - u * u;
+                weights[i] = base * base;
+            } else {
+                weights[i] = 0.0;
+            }
+        }
+        return weights;
+    }
+
+    private double computeMedian(double[] values) {
+        double[] sorted = Arrays.copyOf(values, values.length);
+        Arrays.sort(sorted);
+        int mid = sorted.length / 2;
+        if (sorted.length % 2 == 0) {
+            return (sorted[mid - 1] + sorted[mid]) / 2.0;
+        }
+        return sorted[mid];
+    }
+
+    private double[] estimateSeasonal(double[] detrended, int period, int window, double[] robustnessWeights) {
         int n = detrended.length;
         double[] seasonal = new double[n];
         double[] cycleMeans = new double[period];
@@ -78,7 +139,16 @@ public class STLDecomposition {
                 subseries.add(detrended[i]);
                 indices.add(i);
             }
-            double[] smoothed = loessSmooth(toArray(subseries), Math.min(window, toOdd(subseries.size())));
+
+            double[] subWeights = null;
+            if (robustnessWeights != null) {
+                subWeights = new double[subseries.size()];
+                for (int i = 0; i < indices.size(); i++) {
+                    subWeights[i] = robustnessWeights[indices.get(i)];
+                }
+            }
+
+            double[] smoothed = loessSmooth(toArray(subseries), Math.min(window, toOdd(subseries.size())), subWeights);
             for (int i = 0; i < smoothed.length; i++) {
                 seasonal[indices.get(i)] = smoothed[i];
                 cycleMeans[offset] += smoothed[i];
@@ -101,10 +171,14 @@ public class STLDecomposition {
     }
 
     private double[] centeredMovingAverage(double[] values, int window) {
-        return loessSmooth(values, toOdd(window));
+        return loessSmooth(values, toOdd(window), null);
     }
 
     private double[] loessSmooth(double[] values, int window) {
+        return loessSmooth(values, window, null);
+    }
+
+    private double[] loessSmooth(double[] values, int window, double[] robustnessWeights) {
         if (values.length == 0) {
             return new double[0];
         }
@@ -136,6 +210,9 @@ public class STLDecomposition {
             for (int j = left; j <= right; j++) {
                 double distance = Math.abs(j - i) / maxDistance;
                 double weight = tricube(distance);
+                if (robustnessWeights != null) {
+                    weight *= robustnessWeights[j];
+                }
                 double x = j;
                 double y = values[j];
                 sw += weight;
@@ -143,6 +220,11 @@ public class STLDecomposition {
                 sy += weight * y;
                 sxx += weight * x * x;
                 sxy += weight * x * y;
+            }
+
+            if (sw == 0.0) {
+                smoothed[i] = values[i];
+                continue;
             }
 
             double denominator = sw * sxx - sx * sx;

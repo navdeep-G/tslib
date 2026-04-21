@@ -1,12 +1,15 @@
 package tslib.model.expsmoothing;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Triple Exponential Smoothing (Holt-Winters Multiplicative Method).
  */
-public class TripleExpSmoothing implements ExponentialSmoothing {
+public class TripleExpSmoothing implements ExponentialSmoothing, Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private final double alpha;
     private final double beta;
