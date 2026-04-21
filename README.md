@@ -2,6 +2,8 @@
 
 A small Java library for time-series analysis, forecasting, evaluation, and data-quality workflows.
 
+![tslib demo](docs/demo.gif)
+
 ## What is included
 
 - exponential smoothing: single, double, and triple

@@ -184,3 +184,21 @@ tasks.register('printReleaseCoords') {
         println "${project.group}:${base.archivesName.get()}:${project.version}"
     }
 }
+
+tasks.register('compileExamples', JavaCompile) {
+    group = 'examples'
+    description = 'Compile all usage examples in the examples/ directory.'
+    source = fileTree('examples') { include '**/*.java' }
+    classpath = sourceSets.main.runtimeClasspath
+    destinationDirectory = layout.buildDirectory.dir('examples')
+    options.encoding = 'UTF-8'
+    dependsOn classes
+}
+
+tasks.register('runExamples', JavaExec) {
+    group = 'examples'
+    description = 'Compile and run all tslib usage examples.'
+    dependsOn 'compileExamples'
+    classpath = files(layout.buildDirectory.dir('examples')) + sourceSets.main.runtimeClasspath
+    mainClass = 'TslibExamples'
+}
