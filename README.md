@@ -105,6 +105,35 @@ AutoArima autoArima = new AutoArima(2, 1, 2, tslib.model.arima.ArimaOrderSearch.
 LocalLevelModel localLevel = new LocalLevelModel().fit(raw);
 ```
 
+## REST API
+
+tslib ships a Spring Boot REST API in the `tslib-api/` module that exposes the library over HTTP.
+
+**Run locally:**
+```bash
+./gradlew :tslib-api:bootRun
+```
+
+**Build a fat JAR and run:**
+```bash
+./gradlew :tslib-api:bootJar
+java -jar tslib-api/build/libs/<jar-name>.jar
+```
+
+The server starts on `http://localhost:8080`. All endpoints are `POST` with a JSON body, mounted under `/api/<group>/`.
+
+**Explore interactively** with the Swagger UI:
+```
+http://localhost:8080/swagger-ui
+```
+
+**Example clients** are in `examples/api/`:
+- `curl_examples.sh` — curl commands for every endpoint
+- `python_client.py` — Python requests
+- `r_client.R` — R httr calls
+
+A `Dockerfile` and `docker-compose.yml` are also available in `tslib-api/` for containerized deployments.
+
 ## Phase additions
 
 ### Phase 1
