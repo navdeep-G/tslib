@@ -9,7 +9,9 @@ import org.apache.commons.math3.optim.univariate.BrentOptimizer;
 import org.apache.commons.math3.optim.univariate.SearchInterval;
 import org.apache.commons.math3.optim.univariate.UnivariateObjectiveFunction;
 import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
+import tslib.evaluation.IntervalForecast;
 import tslib.evaluation.RollingOriginBacktest;
+import tslib.model.TimeSeriesModel;
 import tslib.model.expsmoothing.DoubleExpSmoothing;
 import tslib.model.expsmoothing.ExponentialSmoothing;
 import tslib.model.expsmoothing.SingleExpSmoothing;
@@ -20,7 +22,9 @@ import tslib.model.expsmoothing.TripleExpSmoothing;
  * Uses Brent's method with coordinate descent instead of a coarse grid search,
  * giving precise parameter estimates over the continuous [0.01, 0.99] domain.
  */
-public class AutoETS {
+public class AutoETS implements TimeSeriesModel {
+
+    private static final long serialVersionUID = 1L;
 
     public enum ModelType {
         SINGLE,
@@ -38,6 +42,7 @@ public class AutoETS {
     private double[] bestParameters;
     private double bestScore = Double.POSITIVE_INFINITY;
     private ExponentialSmoothing bestModel;
+    private ExponentialSmoothing fittedBestModel;
     private List<Double> trainingData;
 
     public AutoETS() {
@@ -145,12 +150,18 @@ public class AutoETS {
                     backtest.run(data, tesBest::forecast).getRmse());
         }
 
+        fittedBestModel = bestModel.fit(trainingData);
         return this;
     }
 
     public List<Double> forecast(int steps) {
         requireFit();
-        return bestModel.forecast(trainingData, steps).subList(trainingData.size(), trainingData.size() + steps);
+        return fittedBestModel.forecast(steps);
+    }
+
+    public IntervalForecast forecastWithIntervals(int steps, double confidenceLevel) {
+        requireFit();
+        return fittedBestModel.forecastWithIntervals(steps, confidenceLevel);
     }
 
     public ModelType getBestType() {

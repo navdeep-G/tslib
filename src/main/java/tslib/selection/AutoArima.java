@@ -1,6 +1,8 @@
 package tslib.selection;
 
 import java.util.List;
+import tslib.evaluation.IntervalForecast;
+import tslib.model.TimeSeriesModel;
 import tslib.model.arima.ARIMA;
 import tslib.model.arima.ArimaOrderSearch;
 import tslib.model.arima.SARIMA;
@@ -8,7 +10,9 @@ import tslib.model.arima.SARIMA;
 /**
  * Small convenience wrapper around the manual order-search helpers.
  */
-public class AutoArima {
+public class AutoArima implements TimeSeriesModel {
+
+    private static final long serialVersionUID = 1L;
 
     private final int maxP;
     private final int maxD;
@@ -78,6 +82,13 @@ public class AutoArima {
     public List<Double> forecast(int steps) {
         requireFit();
         return sarima != null ? sarima.forecast(steps) : arima.forecast(steps);
+    }
+
+    public IntervalForecast forecastWithIntervals(int steps, double confidenceLevel) {
+        requireFit();
+        return sarima != null
+                ? sarima.forecastWithIntervals(steps, confidenceLevel)
+                : arima.forecastWithIntervals(steps, confidenceLevel);
     }
 
     public ArimaOrderSearch.OrderScore getBestOrder() {

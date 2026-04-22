@@ -1,6 +1,5 @@
 package tslib.model.arima;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -16,7 +15,7 @@ import tslib.util.LinearAlgebra;
  * This implementation is intentionally small and dependency-light. It supports manual order
  * selection and is designed for straightforward forecasting workflows inside this library.
  */
-public class ARIMA implements Serializable {
+public class ARIMA implements tslib.model.TimeSeriesModel {
 
     private static final long serialVersionUID = 1L;
     private static final double DEFAULT_RIDGE = 1e-6;
