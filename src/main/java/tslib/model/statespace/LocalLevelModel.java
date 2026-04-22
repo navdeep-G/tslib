@@ -1,6 +1,5 @@
 package tslib.model.statespace;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.math3.analysis.UnivariateFunction;
@@ -21,7 +20,7 @@ import tslib.evaluation.PredictionInterval;
  * over a log-transformed ratio search interval, using the Brent algorithm (exact MLE
  * rather than a 7-point grid).
  */
-public class LocalLevelModel implements Serializable {
+public class LocalLevelModel implements tslib.model.TimeSeriesModel {
 
     private static final long serialVersionUID = 1L;
 

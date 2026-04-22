@@ -1,6 +1,5 @@
 package tslib.model.arima;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -17,7 +16,7 @@ import tslib.util.LinearAlgebra;
  * dependency-light, and easy to reason about. Seasonal AR and MA terms are fitted together with
  * the non-seasonal terms after applying the requested regular and seasonal differencing.
  */
-public class SARIMA implements Serializable {
+public class SARIMA implements tslib.model.TimeSeriesModel {
 
     private static final long serialVersionUID = 1L;
     private static final double DEFAULT_RIDGE = 1e-6;
