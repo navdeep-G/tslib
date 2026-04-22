@@ -132,7 +132,27 @@ http://localhost:8080/swagger-ui
 - `python_client.py` — Python requests
 - `r_client.R` — R httr calls
 
-A `Dockerfile` and `docker-compose.yml` are also available in `tslib-api/` for containerized deployments.
+**Docker:**
+
+The `tslib-api/` module includes a `Dockerfile` and `docker-compose.yml`. The image requires the fat JAR to be built first.
+
+1. Build the JAR:
+```bash
+./gradlew :tslib-api:bootJar
+```
+
+2. Build and run the image:
+```bash
+docker build -t tslib-api tslib-api/
+docker run -p 8080:8080 tslib-api
+```
+
+Or use Compose (runs from repo root):
+```bash
+docker compose -f tslib-api/docker-compose.yml up --build
+```
+
+The server is available at `http://localhost:8080` in both cases. Compose also wires a healthcheck against `/api-docs` with a 30s interval.
 
 ## Phase additions
 
