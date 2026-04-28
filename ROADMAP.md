@@ -20,6 +20,9 @@ This document describes what has been built, what is actively planned, and what 
 - **Auto-selection** — AutoARIMA, AutoETS
 - **Evaluation** — train/test split, rolling-origin backtest, MAE/RMSE/MAPE/sMAPE/MASE/MeanError, Ljung-Box diagnostics, model benchmark comparison
 - **Data quality** — missing-value imputation (four strategies), z-score / IQR outlier detection, quantile winsorization
+- **Model serialization** — all fitted model classes implement `java.io.Serializable`; `tslib/util/ModelSerializer` provides `save` / `load` helpers for file persistence
+- **`TimeSeriesModel` interface** — common `fit(data)` → `forecast(steps)` → `forecastWithIntervals(steps, level)` contract implemented by every univariate model (ARIMA, SARIMA, LocalLevelModel, AutoARIMA, AutoETS, SES, Holt, Holt-Winters)
+- **In-memory `Collect` constructors** — two new constructors accept `List<Double>` or `double[]` directly, bypassing file I/O
 - **Release tooling** — Gradle publishing, signing, CI/CD workflows, JaCoCo coverage enforcement (≥70%), Checkstyle, SpotBugs
 
 ### REST API (`tslib-api`, Phase 12)
