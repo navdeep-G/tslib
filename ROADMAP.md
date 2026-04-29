@@ -33,16 +33,17 @@ This document describes what has been built, what is actively planned, and what 
 - Dockerfile and Docker Compose for container deployment
 - Working client examples for curl, Python (`requests`), and R (`httr2`)
 
+### REST API hardening (Phase 12 follow-on)
+- Optional API-key authentication (`ApiKeyFilter`) — header-based, toggled via `tslib.api-key.enabled` in `application.properties`
+- Token-bucket rate limiting per client IP (`RateLimitFilter`) — configurable requests-per-minute, disabled by default
+- Request-size enforcement (`RequestSizeFilter`) — rejects payloads above `tslib.request.max-size-bytes` (default 1 MB)
+- Health and readiness endpoints at `/actuator/health` for load-balancer and Docker health-check integration
+- OpenAPI spec auto-export to `docs/openapi.json` via `springdoc-openapi-gradle-plugin` — clients can generate typed SDKs without a running server
+- GitHub Actions workflow (`.github/workflows/docker-publish.yml`) publishes `navdeep-g/tslib-api` to Docker Hub on every push to `master` and on version tags
+
 ---
 
 ## Planned (near-term)
-
-### REST API hardening
-- [ ] Optional API-key authentication (header-based, configurable via `application.properties`)
-- [ ] Request size and rate limiting to prevent abuse on public deployments
-- [ ] Health and readiness endpoints (`/actuator/health`) for load-balancer integration
-- [ ] Publish a Docker image to Docker Hub under `navdeep-g/tslib-api`
-- [ ] OpenAPI spec export as a checked-in file so clients can generate typed SDKs without a running server
 
 ### Client libraries
 - [ ] **Python package** (`tslib-py`) — thin `requests`-based wrapper with typed dataclasses for every request/response, installable via `pip`
