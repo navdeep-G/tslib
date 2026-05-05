@@ -18,4 +18,4 @@ class MovingAverageAPI:
         body: dict = {"data": data, "period": period, "type": type}
         if alpha is not None:
             body["alpha"] = alpha
-        return list(self._s.post("/api/moving-average", body)["forecasts"])
+        return [v for v in self._s.post("/api/moving-average", body)["forecasts"] if v is not None]
