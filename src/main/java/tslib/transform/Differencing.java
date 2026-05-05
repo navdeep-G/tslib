@@ -105,7 +105,7 @@ public final class Differencing {
         double[] anchors = new double[order];
         List<Double> current = new ArrayList<>(history);
         for (int level = 0; level < order; level++) {
-            anchors[level] = current.get(order - 1 - level);
+            anchors[level] = current.get(current.size() - 1);
             if (level < order - 1) {
                 current = difference(current, 1);
                 if (current.isEmpty()) {
