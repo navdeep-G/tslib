@@ -212,7 +212,7 @@ def test_transform_difference(client, airline):
     result = client.transforms.difference(airline[:24], order=1)
     assert len(result) == 23
 
-    restored = client.transforms.inverse_difference(result, airline[:24], order=1)
+    restored = client.transforms.inverse_difference(result, airline[:1], order=1)
     assert len(restored) == 23
     for a, b in zip(restored, airline[1:24]):
         assert abs(a - b) < 1e-6
