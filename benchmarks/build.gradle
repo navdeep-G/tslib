@@ -1,0 +1,35 @@
+plugins {
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':')
+    implementation 'org.apache.commons:commons-math3:3.6.1'
+}
+
+application {
+    mainClass = 'benchmark.BenchmarkRunner'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+run {
+    workingDir = rootProject.projectDir
+    standardOutput = System.out
+}
+
+task guard(type: JavaExec) {
+    description = 'Check benchmark results against stored baselines; fails if any metric regresses.'
+    group = 'verification'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'benchmark.PerformanceGuard'
+    workingDir = rootProject.projectDir
+}

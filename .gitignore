@@ -32,3 +32,6 @@ hs_err_pid*
 
 # Ignore Gradle build collect directory
 build
+
+# Benchmark result CSVs (generated at runtime)
+benchmarks/results/*.csv
