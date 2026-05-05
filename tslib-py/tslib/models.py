@@ -225,7 +225,7 @@ class LjungBoxResult:
     def _from(cls, d: dict) -> "LjungBoxResult":
         return cls(
             statistic=d["statistic"],
-            p_value=d["pvalue"],
+            p_value=d["pValue"],
             lags=d["lags"],
             rejects_at_five_percent=d["rejectsAtFivePercent"],
         )
@@ -362,7 +362,7 @@ class AdfResult:
     def _from(cls, d: dict) -> "AdfResult":
         return cls(
             statistic=d["statistic"],
-            p_value=d["pvalue"],
+            p_value=d["pValue"],
             lag=d["lag"],
             stationary=d["stationary"],
             needs_diff=d["needsDiff"],

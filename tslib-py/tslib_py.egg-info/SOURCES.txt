@@ -1,6 +1,7 @@
 README.md
 pyproject.toml
 tests/test_client.py
+tests/test_integration.py
 tslib/__init__.py
 tslib/_http.py
 tslib/analyze.py
