@@ -1,0 +1,84 @@
+name: Python client
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # ── Unit tests (no server needed) ────────────────────────────────────────
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install
+        run: pip install -e "tslib-py[dev]"
+
+      - name: Run unit tests
+        run: pytest tslib-py/tests/ -m "not integration" -v
+
+  # ── Integration tests (live server) ──────────────────────────────────────
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build API JAR
+        run: ./gradlew :tslib-api:bootJar
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python client
+        run: pip install -e "tslib-py[dev]"
+
+      - name: Start API server
+        run: |
+          java -jar tslib-api/build/libs/tslib-api.jar > /tmp/tslib-api.log 2>&1 &
+          echo $! > /tmp/server.pid
+
+      - name: Wait for server to be healthy
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/actuator/health > /dev/null; then
+              echo "Server is up after ${i} attempts"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Server did not become healthy in time" >&2
+          cat /tmp/tslib-api.log >&2
+          exit 1
+
+      - name: Run integration tests
+        env:
+          TSLIB_BASE_URL: http://localhost:8080
+        run: pytest tslib-py/tests/ -m integration -v
+
+      - name: Stop server
+        if: always()
+        run: kill "$(cat /tmp/server.pid)" 2>/dev/null || true
+
+      - name: Upload server log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tslib-api-log
+          path: /tmp/tslib-api.log
+          retention-days: 7

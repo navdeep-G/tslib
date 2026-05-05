@@ -1,0 +1,67 @@
+# tslib-py
+
+Python client for the [tslib](https://github.com/navdeep-G/tslib) time-series REST API.
+
+## Installation
+
+```bash
+pip install tslib-py          # from PyPI (once published)
+# or directly from source:
+pip install ./tslib-py
+```
+
+Requires Python ≥ 3.8 and a running `tslib-api` server.
+
+## Quickstart
+
+```python
+from tslib import TslibClient
+
+client = TslibClient("http://localhost:8080")
+
+data = [112, 118, 132, 129, 121, 135, 148, ...]  # your time series
+
+# Auto-select and forecast
+result = client.selection.auto_arima(data, steps=12)
+print(result.forecasts)
+print(result.best_order.p, result.best_order.d, result.best_order.q)
+
+# Holt-Winters with prediction intervals
+hw = client.ets.triple(data, period=12, steps=12)
+for iv in hw.intervals:
+    print(f"step {iv.step}: {iv.lower:.1f} – {iv.upper:.1f}")
+```
+
+See `examples/quickstart.py` for a full walkthrough.
+
+## API surface
+
+| Attribute | Endpoints |
+|---|---|
+| `client.arima` | ARIMA, SARIMA, ARIMAX, order search, VAR |
+| `client.ets` | Single (SES), double (Holt), triple (Holt-Winters) |
+| `client.statespace` | Local Level forecast/filter, Kalman filter |
+| `client.selection` | AutoARIMA, AutoETS |
+| `client.transforms` | log, sqrt, cbrt, root, Box-Cox, differencing |
+| `client.decomposition` | STL |
+| `client.evaluation` | metrics, backtest, train/test split, benchmark |
+| `client.data_quality` | impute, outlier detection, winsorize |
+| `client.stationarity` | ADF, KPSS |
+| `client.moving_average` | SMA, EMA, WMA, CMA |
+| `client.diagnostics` | Ljung-Box |
+| `client.analyze` | omnibus summary statistics |
+
+## Authentication
+
+When the server has API key auth enabled (`tslib.api-key.enabled=true`), pass the key at construction time:
+
+```python
+client = TslibClient("https://your-server.example.com", api_key="your-key")
+```
+
+## Development
+
+```bash
+pip install -e "tslib-py[dev]"
+pytest tslib-py/tests/
+```

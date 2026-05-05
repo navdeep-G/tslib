@@ -46,8 +46,8 @@ This document describes what has been built, what is actively planned, and what 
 ## Planned (near-term)
 
 ### Client libraries
-- [ ] **Python package** (`tslib-py`) — thin `requests`-based wrapper with typed dataclasses for every request/response, installable via `pip`
-- [ ] **R package** (`tslibR`) — thin `httr2`-based wrapper matching the Python surface, installable via `devtools::install_github`
+- [x] **Python package** (`tslib-py`) — thin `requests`-based wrapper with typed dataclasses for every request/response, installable via `pip`
+- [x] **R package** (`tslibR`) — thin `httr2`-based wrapper matching the Python surface, installable via `devtools::install_github`
 - [ ] Auto-generate both clients from the OpenAPI spec using `openapi-generator`
 
 ### New library features

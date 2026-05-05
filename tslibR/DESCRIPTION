@@ -1,0 +1,24 @@
+Package: tslibR
+Title: R Client for the tslib Time-Series REST API
+Version: 0.1.0
+Authors@R: person("Navdeep", "Gill",
+    email = "navdeep.gill@servicenow.com",
+    role = c("aut", "cre"))
+Description: A thin httr2-based wrapper around the tslib REST API, providing
+    access to time-series forecasting (ARIMA, SARIMA, ARIMAX, VAR, ETS,
+    state-space), decomposition (STL), evaluation, transforms, stationarity
+    tests, and data-quality endpoints from R. Matches the Python tslib client
+    surface and is installable via devtools::install_github().
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports:
+    httr2 (>= 1.0.0)
+Suggests:
+    testthat (>= 3.0.0),
+    webmockr (>= 0.9.0),
+    jsonlite (>= 1.8.0)
+Config/testthat/edition: 3
+URL: https://github.com/navdeep-G/tslib
+BugReports: https://github.com/navdeep-G/tslib/issues

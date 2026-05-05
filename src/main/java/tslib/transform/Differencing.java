@@ -103,15 +103,15 @@ public final class Differencing {
 
     private static double[] buildAnchors(List<Double> history, int order) {
         double[] anchors = new double[order];
-        anchors[0] = history.get(history.size() - 1);
-
         List<Double> current = new ArrayList<>(history);
-        for (int level = 1; level < order; level++) {
-            current = difference(current, 1);
-            if (current.isEmpty()) {
-                throw new IllegalArgumentException("History is too short to invert the requested differencing order");
-            }
+        for (int level = 0; level < order; level++) {
             anchors[level] = current.get(current.size() - 1);
+            if (level < order - 1) {
+                current = difference(current, 1);
+                if (current.isEmpty()) {
+                    throw new IllegalArgumentException("History is too short to invert the requested differencing order");
+                }
+            }
         }
         return anchors;
     }
