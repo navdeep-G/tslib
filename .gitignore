@@ -35,3 +35,5 @@ build
 
 # Benchmark result CSVs (generated at runtime)
 benchmarks/results/*.csv
+# baseline.csv is a committed reference, not a generated artifact
+!benchmarks/results/baseline.csv
