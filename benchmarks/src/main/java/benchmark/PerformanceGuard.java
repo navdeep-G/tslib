@@ -26,6 +26,18 @@ public class PerformanceGuard {
     private static final String BASELINE_FILE = "benchmarks/results/baseline.csv";
     private static final String RESULTS_FILE  = "benchmarks/results/java_results.csv";
 
+    /** Walks up from cwd until a directory containing {@code settings.gradle} or {@code gradlew} is found. */
+    private static Path findProjectRoot() {
+        Path dir = Path.of("").toAbsolutePath();
+        while (dir != null) {
+            if (Files.exists(dir.resolve("settings.gradle")) || Files.exists(dir.resolve("gradlew"))) {
+                return dir;
+            }
+            dir = dir.getParent();
+        }
+        return Path.of("").toAbsolutePath();
+    }
+
     private static final double TIMING_MULTIPLIER   = 20.0;
     private static final double ACCURACY_TOLERANCE  = 0.02;
     private static final double SYMMETRIC_TOLERANCE = 0.05;
@@ -43,8 +55,9 @@ public class PerformanceGuard {
             "statistic", "pvalue", "lambda");
 
     public static void main(String[] args) throws Exception {
-        Map<String, Double> baseline = loadBaseline(BASELINE_FILE);
-        Map<String, Double> current  = loadResults(RESULTS_FILE);
+        Path root = findProjectRoot();
+        Map<String, Double> baseline = loadBaseline(root.resolve(BASELINE_FILE).toString());
+        Map<String, Double> current  = loadResults(root.resolve(RESULTS_FILE).toString());
 
         int pass = 0, fail = 0;
         List<String> failures = new ArrayList<>();
