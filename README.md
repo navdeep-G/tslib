@@ -105,6 +105,52 @@ AutoArima autoArima = new AutoArima(2, 1, 2, tslib.model.arima.ArimaOrderSearch.
 LocalLevelModel localLevel = new LocalLevelModel().fit(raw);
 ```
 
+## Performance
+
+tslib is benchmarked against equivalent implementations in Python (statsmodels · pmdarima · pandas · scipy) and R (forecast · tseries · vars · KFAS · TTR · zoo).
+Full methodology, raw CSVs, and cross-language comparison are in [`benchmarks/`](benchmarks/).
+
+### Execution speed *(median of 5 timed runs after 2 warm-ups, milliseconds — lower is better)*
+
+| Algorithm | tslib (ms) | Python (ms) | R (ms) | vs Python | vs R |
+|---|---:|---:|---:|---:|---:|
+| Single ETS (α=0.3) | **0.008** | 0.371 | 4.119 | 46× faster | 515× faster |
+| Double ETS (α=0.3, γ=0.1) | **0.020** | 1.008 | 8.651 | 50× faster | 433× faster |
+| Holt-Winters (α=0.3, s=12) | **0.045** | 1.441 | 38.360 | 32× faster | 852× faster |
+| SARIMA(1,1,1)(1,1,0,12) | **0.626** | 49.420 | 8.535 | 79× faster | 14× faster |
+| VAR(1) | **0.064** | 0.321 | 4.734 | 5× faster | 74× faster |
+| Local Level (MLE) | **0.668** | 3.821 | 14.024 | 6× faster | 21× faster |
+| ARIMA(1,1,1) | **2.649** | 12.549 | 6.661 | 5× faster | 3× faster |
+| Auto ARIMA (AIC, max p,d,q=3) | 92.74 | **90.563** | 23.881 | ~tie | 2.6× slower |
+| Linear imputation (10 NAs) | **0.018** | 0.046 | 0.020 | 3× faster | ~tie |
+| Box-Cox λ search | **0.365** | 3.935 | 0.777 | 11× faster | 2× faster |
+
+*Measured on macOS Apple Silicon (Java 17 · Python 3.12 · R 4.6). CI (Linux x86) timings are higher; ratios are representative.*
+
+### Forecast accuracy — holdout MAE *(lower is better, bold = best)*
+
+| Algorithm | Dataset | tslib | Python | R |
+|---|---|---:|---:|---:|
+| ARIMA(1,1,1) | hotel (n=168, holdout=12) | **87.41** | 95.20 | 95.20 |
+| SARIMA(1,1,1)(1,1,0,12) | airpassengers (n=144, holdout=12) | 18.94 | **16.64** | 16.79 |
+| Holt-Winters (α=0.3, β=0.2, γ=0.1) | airpassengers (n=144, holdout=12) | **12.98** | 17.55 | 17.05 |
+| Auto ARIMA (AIC) | hotel (n=168, holdout=12) | **88.84** | 95.75 | 95.75 |
+| Local Level (MLE) | jj (n=84, holdout=8) | **3.48** | 3.64 | 3.64 |
+
+tslib wins or ties 6 of 8 head-to-heads by MAE. Fixed-parameter models (ETS, VAR, SMA, EMA, WMA) produce numerically identical results across all three libraries.
+
+ARIMA accuracy differences arise from estimation method: tslib uses CLS, Python defaults to innovations-MLE, and R uses CSS. All are valid estimators; CLS generalises better on the hotel series and worse on airpassengers (SARIMA).
+
+### Performance regression CI
+
+The [`benchmark.yml`](.github/workflows/benchmark.yml) workflow runs on every push or PR that touches `src/` or `benchmarks/`. It runs the full Java benchmark suite and then executes `PerformanceGuard`, which fails the build if:
+
+- any **accuracy metric** (MAE, RMSE, MAPE, smoothing error, remainder variance, …) degrades by more than **2%** from the stored baseline
+- any **execution time** exceeds **20×** the baseline (generous for CI machine variance)
+- any **test statistic or model output** (ADF statistic, KPSS statistic, Ljung-Box Q, Box-Cox λ) drifts more than **5%** from the baseline
+
+To accept an intentional improvement, update `benchmarks/results/baseline.csv`.
+
 ## REST API
 
 tslib ships a Spring Boot REST API in the `tslib-api/` module that exposes the library over HTTP.

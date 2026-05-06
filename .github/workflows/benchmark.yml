@@ -1,0 +1,46 @@
+name: Benchmark CI
+
+on:
+  push:
+    paths:
+      - 'src/**'
+      - 'benchmarks/src/**'
+      - 'benchmarks/results/baseline.csv'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'benchmarks/src/**'
+      - 'benchmarks/results/baseline.csv'
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run benchmarks
+        run: ./gradlew benchmarks:run
+
+      - name: Run performance guard
+        run: ./gradlew benchmarks:guard
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: benchmark-results-${{ github.sha }}
+          path: |
+            benchmarks/results/java_results.csv
+            benchmarks/results/baseline.csv
+          retention-days: 90
