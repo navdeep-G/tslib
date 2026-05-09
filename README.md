@@ -1,8 +1,6 @@
 # tslib
 
-A small Java library for time-series analysis, forecasting, evaluation, and data-quality workflows.
-
-![tslib demo](docs/demo.gif)
+A Java library for time-series analysis, forecasting, evaluation, and data-quality workflows.
 
 ## What is included
 
